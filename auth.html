@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ចូលគណនី / ចុះឈ្មោះ - ហាងលក់គណនី</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .auth-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 450px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .auth-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 1.5rem;
+            text-align: center;
+        }
+
+        .auth-header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-header p {
+            font-size: 0.95rem;
+            opacity: 0.95;
+        }
+
+        .auth-tabs {
+            display: flex;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            background: #f9f9f9;
+            border: none;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #999;
+            transition: all 0.3s;
+        }
+
+        .auth-tab.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .auth-form {
+            padding: 2rem;
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.85rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .form-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-checkbox input[type="checkbox"] {
+            width: auto;
+        }
+
+        .form-checkbox label {
+            margin: 0;
+            font-weight: normal;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .form-link {
+            text-align: center;
+            margin-top: 1rem;
+            color: #666;
+        }
+
+        .form-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .form-link a:hover {
+            text-decoration: underline;
+        }
+
+        .message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .btn-home {
+            display: block;
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .btn-home:hover {
+            text-decoration: underline;
+        }
+
+        .user-profile {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 450px;
+            width: 100%;
+            padding: 2rem;
+            text-align: center;
+            display: none;
+        }
+
+        .user-profile.active {
+            display: block;
+        }
+
+        .user-profile h2 {
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+
+        .user-info {
+            background: #f9f9f9;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .user-info label {
+            color: #999;
+            font-size: 0.9rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .user-info p {
+            color: #333;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .btn-logout {
+            width: 100%;
+            padding: 1rem;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-logout:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+        }
+
+        .btn-back {
+            width: 100%;
+            padding: 0.75rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+
+        .btn-back:hover {
+            background: #764ba2;
+        }
+    </style>
+</head>
+<body>
+    <!-- Auth Container -->
+    <div id="authContainer" class="auth-container">
+        <div class="auth-header">
+            <h1>🛍️ ហាងលក់គណនី</h1>
+            <p>ចូលគណនី ឬ ចុះឈ្មោះដើម្បីទិញ</p>
+        </div>
+
+        <div class="auth-tabs">
+            <button class="auth-tab active" onclick="switchTab('login')">ចូលគណនី</button>
+            <button class="auth-tab" onclick="switchTab('register')">ចុះឈ្មោះ</button>
+        </div>
+
+        <!-- Login Form -->
+        <form class="auth-form active" id="loginForm" onsubmit="handleLogin(event)">
+            <div id="loginMessage" class="message"></div>
+            
+            <div class="form-group">
+                <label>អ៊ីមែល ឬ ឈ្មោះប្រើប្រាស់</label>
+                <input type="text" id="loginEmail" placeholder="user@example.com" required>
+            </div>
+
+            <div class="form-group">
+                <label>ពាក្យសម្ងាត់</label>
+                <input type="password" id="loginPassword" placeholder="••••••••" required>
+            </div>
+
+            <div class="form-checkbox">
+                <input type="checkbox" id="rememberMe">
+                <label for="rememberMe">ចូលផ្សងមកក្រោយ</label>
+            </div>
+
+            <button type="submit" class="btn-submit">ចូលគណនី</button>
+
+            <div class="form-link">
+                គមនគណនី? <a onclick="switchTab('register')">ចុះឈ្មោះថ្មី</a>
+            </div>
+
+            <a href="index.html" class="btn-home">← ត្រឡប់ទៅគេហទំព័រ</a>
+        </form>
+
+        <!-- Register Form -->
+        <form class="auth-form" id="registerForm" onsubmit="handleRegister(event)">
+            <div id="registerMessage" class="message"></div>
+
+            <div class="form-group">
+                <label>ឈ្មោះពេញលេញ</label>
+                <input type="text" id="registerName" placeholder="ឈ្មោះលោក/លោកស្រី" required>
+            </div>
+
+            <div class="form-group">
+                <label>អ៊ីមែល</label>
+                <input type="email" id="registerEmail" placeholder="user@example.com" required>
+            </div>
+
+            <div class="form-group">
+                <label>ឈ្មោះប្រើប្រាស់</label>
+                <input type="text" id="registerUsername" placeholder="username" required>
+            </div>
+
+            <div class="form-group">
+                <label>ពាក្យសម្ងាត់</label>
+                <input type="password" id="registerPassword" placeholder="••••••••" required>
+            </div>
+
+            <div class="form-group">
+                <label>បញ្ជាក់ពាក្យសម្ងាត់</label>
+                <input type="password" id="registerPasswordConfirm" placeholder="••••••••" required>
+            </div>
+
+            <div class="form-checkbox">
+                <input type="checkbox" id="agreeTerms" required>
+                <label for="agreeTerms">ខ្ញុំយល់ព្រម និង ទទួលយក លក្ខខណ្ឌនៃការប្រើប្រាស់</label>
+            </div>
+
+            <button type="submit" class="btn-submit">ចុះឈ្មោះ</button>
+
+            <div class="form-link">
+                មានគណនីរួច? <a onclick="switchTab('login')">ចូលគណនីដែលមាន</a>
+            </div>
+
+            <a href="index.html" class="btn-home">← ត្រឡប់ទៅគេហទំព័រ</a>
+        </form>
+    </div>
+
+    <!-- User Profile -->
+    <div id="userProfile" class="user-profile">
+        <h2>🎉 សូមស្វាគមន៍!</h2>
+        
+        <div class="user-info">
+            <label>ឈ្មោះ</label>
+            <p id="profileName"></p>
+        </div>
+
+        <div class="user-info">
+            <label>អ៊ីមែល</label>
+            <p id="profileEmail"></p>
+        </div>
+
+        <div class="user-info">
+            <label>ឈ្មោះប្រើប្រាស់</label>
+            <p id="profileUsername"></p>
+        </div>
+
+        <p style="color: #999; margin: 1.5rem 0;">ពេលដែលចូលគណនីបានលេច អ្នកអាចទិញគណនីពីយើងបាន។</p>
+
+        <div id="purchaseHistory" style="background:#f9f9f9;padding:1rem;border-radius:8px;margin-bottom:1rem;text-align:left;display:none;">
+            <label style="display:block;font-weight:bold;margin-bottom:0.75rem;color:#667eea;">📦 ប្រវត្តិទិញ</label>
+            <div id="purchasesList" style="max-height:200px;overflow-y:auto;"></div>
+        </div>
+
+        <a href="index.html" class="btn-back">ទិញគណនីឥឡូវនេះ</a>
+        
+        <button class="btn-logout" onclick="handleLogout()">ចេញពីគណនី</button>
+    </div>
+
+    <script>
+        const STORAGE_USERS = 'usersList';
+        const STORAGE_CURRENT_USER = 'currentUser';
+
+        // Check if user is logged in on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentUser = JSON.parse(localStorage.getItem(STORAGE_CURRENT_USER));
+            if (currentUser) {
+                showUserProfile(currentUser);
+            }
+            // If URL contains ?tab=register or ?tab=login, open that tab
+            try {
+                var requestedTab = getQueryParam('tab');
+                if (requestedTab === 'register' || requestedTab === 'login') {
+                    switchTab(requestedTab);
+                }
+            } catch (e) {}
+        });
+
+        // Helper to read query param like ?return=%2Findex.html
+        function getQueryParam(name) {
+            var params = new URLSearchParams(window.location.search);
+            return params.get(name);
+        }
+
+        function switchTab(tab) {
+            // Hide all forms
+            document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+
+            // Show selected form
+            if (tab === 'login') {
+                document.getElementById('loginForm').classList.add('active');
+                document.querySelectorAll('.auth-tab')[0].classList.add('active');
+            } else if (tab === 'register') {
+                document.getElementById('registerForm').classList.add('active');
+                document.querySelectorAll('.auth-tab')[1].classList.add('active');
+            }
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            const users = JSON.parse(localStorage.getItem(STORAGE_USERS)) || [];
+            
+            const user = users.find(u => 
+                (u.email === email || u.username === email) && u.password === password
+            );
+
+            const messageDiv = document.getElementById('loginMessage');
+
+            if (user) {
+                // Require email verification
+                if (!user.verified) {
+                    messageDiv.className = 'message error';
+                    messageDiv.innerHTML = '✗ សូមបញ្ជាក់អ៊ីមែលរបស់អ្នក មុនចូល។ <br><button id="resendBtn" class="btn-back">ផ្ញើតំណបញ្ជាក់ម្តងទៀត</button>';
+                    document.getElementById('resendBtn').addEventListener('click', function() { sendVerification(user, true); });
+                    return;
+                }
+
+                localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(user));
+                messageDiv.className = 'message success';
+                messageDiv.textContent = '✓ ចូលគណនីដោយជោគជ័យ!';
+
+                // Redirect back to return URL if present, otherwise show profile
+                var returnTo = getQueryParam('return') || getQueryParam('returnTo');
+                if (returnTo) {
+                    setTimeout(function() { window.location.href = decodeURIComponent(returnTo); }, 700);
+                } else {
+                    setTimeout(() => { showUserProfile(user); }, 700);
+                }
+            } else {
+                messageDiv.className = 'message error';
+                messageDiv.textContent = '✗ អ៊ីមែល/ឈ្មោះប្រើប្រាស់ ឬ ពាក្យសម្ងាត់មិនត្រឹមត្រូវ';
+            }
+        }
+
+        // Simulate sending an email verification link
+        function sendVerification(user, silent) {
+            // Ensure tokens store
+            var tokens = JSON.parse(localStorage.getItem('emailConfirmTokens') || '[]');
+            var token = 'tkn_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+            tokens.push({ token: token, userId: user.id });
+            localStorage.setItem('emailConfirmTokens', JSON.stringify(tokens));
+
+            // Provide a simulated link to the user (for demo)
+            if (!silent) {
+                var msg = document.getElementById('registerMessage');
+                if (msg) {
+                    msg.className = 'message success';
+                    msg.innerHTML = '✓ យើងបានផ្ញើតំណបញ្ជាក់ទៅអ៊ីមែលរបស់អ្នក។ <br> សូមចុចលើតំណខាងក្រោមដើម្បីបញ្ជាក់ (សម្រាប់សាកល្បង): <br><a id="simLink" href="#">បញ្ជាក់អ៊ីមែល</a>';
+                    document.getElementById('simLink').addEventListener('click', function(e) {
+                        e.preventDefault();
+                        confirmEmail(token);
+                    });
+                }
+            }
+        }
+
+        // Confirm email by token (simulated)
+        function confirmEmail(token) {
+            var tokens = JSON.parse(localStorage.getItem('emailConfirmTokens') || '[]');
+            var t = tokens.find(x => x.token === token);
+            if (!t) {
+                alert('តំណបញ្ជាក់មិនត្រឹមត្រូវ ឬបានផុតកំណត់');
+                return;
+            }
+
+            var users = JSON.parse(localStorage.getItem(STORAGE_USERS) || '[]');
+            var idx = users.findIndex(u => u.id === t.userId);
+            if (idx === -1) {
+                alert('អ្នកប្រើប្រាស់មិនត្រូវបានរកឃើញ');
+                return;
+            }
+
+            users[idx].verified = true;
+            localStorage.setItem(STORAGE_USERS, JSON.stringify(users));
+
+            // If this is currentUser, update it too
+            var current = JSON.parse(localStorage.getItem(STORAGE_CURRENT_USER) || 'null');
+            if (current && current.id === users[idx].id) {
+                current.verified = true;
+                localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(current));
+            }
+
+            // remove token
+            tokens = tokens.filter(x => x.token !== token);
+            localStorage.setItem('emailConfirmTokens', JSON.stringify(tokens));
+
+            alert('✓ បានបញ្ជាក់អ៊ីមែលដោយជោគជ័យ! អ្នកឥឡូវអាចចូលគណនីបាន។');
+            // Set as current user and redirect back if return URL provided
+            localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(users[idx]));
+            var returnTo = getQueryParam('return') || getQueryParam('returnTo');
+            if (returnTo) {
+                window.location.href = decodeURIComponent(returnTo);
+                return;
+            }
+            try { showUserProfile(users[idx]); } catch (e) {}
+        }
+
+        function handleRegister(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const username = document.getElementById('registerUsername').value;
+            const password = document.getElementById('registerPassword').value;
+            const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+
+            const messageDiv = document.getElementById('registerMessage');
+
+            if (password !== passwordConfirm) {
+                messageDiv.className = 'message error';
+                messageDiv.textContent = '✗ ពាក្យសម្ងាត់មិនផ្គូផ្គង';
+                return;
+            }
+
+            const users = JSON.parse(localStorage.getItem(STORAGE_USERS)) || [];
+            
+            if (users.find(u => u.email === email)) {
+                messageDiv.className = 'message error';
+                messageDiv.textContent = '✗ អ៊ីមែលនេះបានចុះឈ្មោះរួចហើយ';
+                return;
+            }
+
+            if (users.find(u => u.username === username)) {
+                messageDiv.className = 'message error';
+                messageDiv.textContent = '✗ ឈ្មោះប្រើប្រាស់នេះបានប្រើប្រាស់រួចហើយ';
+                return;
+            }
+
+            const newUser = {
+                id: Date.now(),
+                name: name,
+                email: email,
+                username: username,
+                password: password,
+                balance: 0,
+                verified: false,
+                createdAt: new Date().toLocaleString('km-KH')
+            };
+
+            users.push(newUser);
+            localStorage.setItem(STORAGE_USERS, JSON.stringify(users));
+
+            messageDiv.className = 'message success';
+            messageDiv.textContent = '✓ ចុះឈ្មោះដោយជោគជ័យ! សូមបញ្ជាក់អ៊ីមែលរបស់អ្នក មុនចូលគណនី។';
+
+            // Save and send verification link (simulated)
+            sendVerification(newUser);
+        }
+
+        function showUserProfile(user) {
+            document.getElementById('authContainer').style.display = 'none';
+            document.getElementById('userProfile').classList.add('active');
+            
+            document.getElementById('profileName').textContent = user.name;
+            document.getElementById('profileEmail').textContent = user.email;
+            document.getElementById('profileUsername').textContent = '@' + user.username;
+            // Show balance (handle older users without balance)
+            var bal = (typeof user.balance === 'number') ? user.balance : (user.balance ? Number(user.balance) : 0);
+            // Create or update balance block
+            var existing = document.getElementById('profileBalance');
+            if (!existing) {
+                var div = document.createElement('div');
+                div.className = 'user-info';
+                div.innerHTML = '<label>សមតុល្យកក់</label><p id="profileBalance"></p>';
+                var parent = document.getElementById('userProfile');
+                parent.insertBefore(div, parent.querySelector('.btn-back'));
+            }
+            document.getElementById('profileBalance').textContent = '$' + Number(bal).toFixed(2);
+            // Create or update top-up section
+            if (!document.getElementById('topUpSection')) {
+                var topDiv = document.createElement('div');
+                topDiv.id = 'topUpSection';
+                topDiv.className = 'user-info';
+                topDiv.innerHTML = `
+                    <label>ដាក់ប្រាក់ចូលក្នុងគណនី</label>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <input id="topUpAmount" type="number" min="0" step="0.01" placeholder="ចុចចំនួនដុល្លារ" style="flex:1;padding:8px;border-radius:6px;border:1px solid #ddd;" />
+                        <button id="topUpSim" class="btn-back" style="margin:0;">ដាក់ប្រាក់ (ល្បឿន)</button>
+                    </div>
+                    <div style="margin-top:8px;display:flex;gap:8px;">
+                        <button id="topUpQR" class="btn-submit" style="flex:1;background:linear-gradient(135deg,#ff5a5f 0%,#ff8473 100%);">បង្ហាញ QR</button>
+                        <button id="topUpAuto" class="btn-submit" style="flex:1;">ដាក់ដោយស្វ័យប្រវត្តិ (simulate)</button>
+                    </div>
+                `;
+                var parent = document.getElementById('userProfile');
+                parent.insertBefore(topDiv, parent.querySelector('.btn-back'));
+
+                document.getElementById('topUpSim').addEventListener('click', function() {
+                    var amt = parseFloat(document.getElementById('topUpAmount').value || '0');
+                    if (!amt || amt <= 0) { alert('សូមបញ្ចូលចំនួនត្រឹមត្រូវ'); return; }
+                    // scroll to deposit on index page with amount
+                    window.location.href = 'index.html?depositAmount=' + encodeURIComponent(amt) + '&showQR=1';
+                });
+
+                document.getElementById('topUpQR').addEventListener('click', function() {
+                    // redirect to index where deposit QR panel exists
+                    window.location.href = 'index.html?showQR=1';
+                });
+
+                document.getElementById('topUpAuto').addEventListener('click', function() {
+                    var amt = parseFloat(document.getElementById('topUpAmount').value || '0');
+                    if (!amt || amt <= 0) { alert('សូមបញ្ចូលចំនួនត្រឹមត្រូវ'); return; }
+                    // Add to user balance
+                    var users = JSON.parse(localStorage.getItem(STORAGE_USERS) || '[]');
+                    var idx = users.findIndex(u => u.id === user.id);
+                    if (idx !== -1) {
+                        users[idx].balance = Number((Number(users[idx].balance||0) + amt).toFixed(2));
+                        localStorage.setItem(STORAGE_USERS, JSON.stringify(users));
+                        localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(users[idx]));
+                        document.getElementById('profileBalance').textContent = '$' + Number(users[idx].balance).toFixed(2);
+                    } else {
+                        // fallback: update currentUser only
+                        user.balance = Number((Number(user.balance||0) + amt).toFixed(2));
+                        localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(user));
+                        document.getElementById('profileBalance').textContent = '$' + Number(user.balance).toFixed(2);
+                    }
+                    // record deposit
+                    var deposits = JSON.parse(localStorage.getItem('depositsList') || '[]');
+                    deposits.push({ id: Date.now(), userId: user.id, amount: amt, method: 'auto', status: 'completed', at: new Date().toLocaleString('km-KH') });
+                    localStorage.setItem('depositsList', JSON.stringify(deposits));
+                    alert('✓ ដាក់ប្រាក់ចូលដោយជោគជ័យ $' + amt.toFixed(2));
+                });
+            }
+
+            // Load purchases for this user
+            var purchases = JSON.parse(localStorage.getItem('purchasesList') || '[]');
+            var userPurchases = purchases.filter(p => p.userId === user.id);
+            
+            if (userPurchases.length > 0) {
+                var purchaseDiv = document.getElementById('purchaseHistory');
+                purchaseDiv.style.display = 'block';
+                var purchasesList = document.getElementById('purchasesList');
+                purchasesList.innerHTML = userPurchases.map(p => {
+                    var html = '<div style="border-bottom:1px solid #ddd;padding:0.75rem 0;font-size:0.9rem;">';
+                    html += '<strong style="color:#667eea;">' + p.product + '</strong><br>';
+                    html += '<small style="color:#999;">ថ្ងៃលក់៖ ' + p.purchasedAt + '</small>';
+                    if (p.accountUsername) {
+                        html += '<br><span style="background:#e8f5e9;padding:0.4rem 0.6rem;border-radius:4px;display:inline-block;margin-top:0.3rem;font-size:0.85rem;color:#2e7d32;">';
+                        html += '👤 ' + p.accountUsername + ' | 🔐 ' + p.accountPassword;
+                        html += '</span>';
+                    }
+                    html += '</div>';
+                    return html;
+                }).join('');
+            }
+
+            // Load emails sent to this user
+            var emailsSent = JSON.parse(localStorage.getItem('emailsSent') || '[]');
+            var userEmails = emailsSent.filter(e => e.to === user.email);
+            
+            if (userEmails.length > 0) {
+                var emailSection = document.getElementById('purchaseHistory');
+                if (!document.getElementById('emailSection')) {
+                    var emailDiv = document.createElement('div');
+                    emailDiv.id = 'emailSection';
+                    emailDiv.style.cssText = 'background:#f0f8ff;padding:1rem;border-radius:8px;margin-bottom:1rem;text-align:left;';
+                    var parent = document.getElementById('userProfile');
+                    parent.insertBefore(emailDiv, parent.querySelector('.btn-back'));
+                }
+                var emailDiv = document.getElementById('emailSection');
+                emailDiv.innerHTML = '<label style="display:block;font-weight:bold;margin-bottom:0.75rem;color:#0066cc;">📧 អ៊ីមែលទទួលបាន</label>';
+                emailDiv.innerHTML += userEmails.map(e => {
+                    var html = '<div style="background:white;border:1px solid #b3e5fc;border-radius:6px;padding:0.75rem;margin-bottom:0.75rem;font-size:0.85rem;">';
+                    html += '<strong style="color:#01579b;">ផលិតផល៖ ' + e.product + '</strong><br>';
+                    html += '<small style="color:#666;">ផ្ញើ៖ ' + e.sentAt + '</small><br>';
+                    html += '<div style="background:#f5f5f5;padding:0.5rem;border-radius:4px;margin-top:0.5rem;font-family:monospace;font-size:0.8rem;">';
+                    html += '<strong>ឈ្មោះប្រើប្រាស់:</strong> ' + e.username + '<br>';
+                    html += '<strong>ពាក្យសម្ងាត់:</strong> ' + e.password;
+                    html += '</div></div>';
+                    return html;
+                }).join('');
+            }
+        }
+
+        function handleLogout() {
+            if (confirm('តើអ្នកប្រាកដថាចង់ចេញពីគណនី?')) {
+                localStorage.removeItem(STORAGE_CURRENT_USER);
+                document.getElementById('userProfile').classList.remove('active');
+                document.getElementById('authContainer').style.display = 'block';
+                document.getElementById('loginForm').reset();
+                document.getElementById('registerForm').reset();
+                switchTab('login');
+            }
+        }
+    </script>
+</body>
+</html>

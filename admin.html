@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - គ្រប់គ្រងលក់គណនី</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f4f4f4;
+            color: #333;
+        }
+
+        .admin-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .admin-header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .admin-container {
+            max-width: 1300px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .admin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .admin-card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+        }
+
+        .admin-card h3 {
+            margin-bottom: 1.5rem;
+            color: #2c3e50;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 0.75rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .btn-admin {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.85rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .list-items {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .list-item {
+            padding: 1rem;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        .list-item-text {
+            flex: 1;
+        }
+
+        .list-item-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-small {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .btn-small:hover {
+            background: #ff5252;
+        }
+
+        .btn-edit {
+            background: #4ecdc4;
+        }
+
+        .btn-edit:hover {
+            background: #3dbaab;
+        }
+
+        .deposit-status {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .price-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+
+        footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-header">
+        <h1>🔐 Admin Panel</h1>
+        <p>គ្រប់គ្រងលក់គណនី ធានាកម្ម នៃតម្លៃ និងសេវាកម្ម</p>
+    </div>
+
+    <div class="admin-container">
+        <div class="admin-grid">
+            <!-- Deposit Management Section -->
+            <div class="admin-card">
+                <h3>💳 គ្រប់គ្រងដាក់ប្រាក់</h3>
+                <div class="success-message" id="confirmDepositMsg">ដាក់ប្រាក់បានប្រើប្រាស់ដោយជោគជ័យ!</div>
+                <form id="confirmDepositForm">
+                    <div class="form-group">
+                        <label>អ៊ីមែលអតិថិជន</label>
+                        <input type="email" id="customerEmail" placeholder="customer@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>ឈ្មោះអតិថិជន</label>
+                        <input type="text" id="customerName" placeholder="ឈ្មោះពេញលេញ" required>
+                    </div>
+                    <div class="form-group">
+                        <label>ចំនួនប្រាក់ (USD)</label>
+                        <input type="number" id="depositAmount" placeholder="$0.00" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>នៀសក្នុងរដ្ឋ</label>
+                        <select id="paymentMethod" required>
+                            <option>QR Code</option>
+                            <option>ធនាគារ</option>
+                            <option>ឌីជីថល</option>
+                            <option>ផ្សេងទៀត</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>ស្ថានភាព</label>
+                        <select id="depositStatus" required>
+                            <option value="completed">បានទូទាត់</option>
+                            <option value="pending">សម្ងាក់</option>
+                            <option value="failed">ប្រតិpetition</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="sendEmailConfirmation">
+                            ផ្ញើលិខិតបញ្ជាក់តាមរយៈអ៊ីមែល
+                        </label>
+                    </div>
+                    <button type="submit" class="btn-admin">ប្រើប្រាស់ដាក់ប្រាក់</button>
+                </form>
+            </div>
+
+            <!-- Email Settings Section -->
+            <div class="admin-card">
+                <h3>📧 ការកំណត់អ៊ីមែល</h3>
+                <div class="success-message" id="saveEmailMsg">ការកំណត់អ៊ីមែលបានរក្សាទុកដោយជោគជ័យ!</div>
+                <form id="emailSettingsForm">
+                    <div class="form-group">
+                        <label>អ៊ីមែលគ្រប់គ្រង</label>
+                        <input type="email" id="adminEmail" placeholder="admin@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>ថ្នាក់ពាក្យសម្ងាត់ SMTP (ឬ API Key)</label>
+                        <input type="password" id="emailPassword" placeholder="••••••••" required>
+                    </div>
+                    <div class="form-group">
+                        <label>SMTP Server (ឧ. smtp.gmail.com)</label>
+                        <input type="text" id="smtpServer" placeholder="smtp.gmail.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>ច្រើនការចូលប្រើ៉ាច់ប៊ូ (ឧ. 587)</label>
+                        <input type="number" id="smtpPort" placeholder="587" required>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="smtpSSL">
+                            ប្រើប្រាស់ SSL/TLS
+                        </label>
+                    </div>
+                    <button type="submit" class="btn-admin">រក្សាទុកការកំណត់អ៊ីមែល</button>
+                </form>
+            </div>
+
+            <!-- Deposit History Section -->
+            <div class="admin-card" style="grid-column: span 2;">
+                <h3>📋 ប្រវត្តិដាក់ប្រាក់</h3>
+                <div id="depositHistory" class="list-items">
+                    <div class="list-item">
+                        <div class="list-item-text">
+                            <strong>គមនដាក់ប្រាក់ដែលបានកត់ត្រា</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                <h3>➕ បន្ថែមគណនីថ្មី</h3>
+                <div class="success-message" id="addAccountMsg">គណនីបានបន្ថែមដោយជោគជ័យ!</div>
+                <form id="addAccountForm">
+                    <div class="form-group">
+                        <label>ឈ្មោះផលិតផល</label>
+                        <input type="text" id="accountName" placeholder="ឧ. CapCut Pro" required>
+                    </div>
+                    <div class="form-group">
+                        <label>ឈ្មោះគណនី</label>
+                        <input type="text" id="accountUsername" placeholder="ឧ. user@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>ពាក្យសម្ងាត់</label>
+                        <input type="password" id="accountPassword" placeholder="••••••••" required>
+                    </div>
+                    <div class="form-group">
+                        <label>រយៈពេល</label>
+                        <select id="accountDuration" required>
+                            <option>១ ខែ</option>
+                            <option>៦ ខែ</option>
+                            <option>១ ឆ្នាំ</option>
+                            <option>២ ឆ្នាំ</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-admin">បន្ថែមគណនី</button>
+                </form>
+            </div>
+
+            <!-- Manage Prices Section -->
+            <div class="admin-card">
+                <h3>💰 គ្រប់គ្រងតម្លៃ</h3>
+                <div class="success-message" id="updatePriceMsg">តម្លៃបានក្រឹត្យបម្រុងដោយជោគជ័យ!</div>
+                <form id="updatePriceForm">
+                    <div class="form-group">
+                        <label>ឈ្មោះផលិតផល</label>
+                        <input type="text" id="productName" placeholder="ឧ. CapCut Pro" required>
+                    </div>
+                    <div class="price-grid">
+                        <div class="form-group">
+                            <label>១ ខែ</label>
+                            <input type="number" id="price1month" placeholder="$0.00" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>៦ ខែ</label>
+                            <input type="number" id="price6month" placeholder="$0.00" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>១ ឆ្នាំ</label>
+                            <input type="number" id="price1year" placeholder="$0.00" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>២ ឆ្នាំ</label>
+                            <input type="number" id="price2year" placeholder="$0.00" step="0.01" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-admin">រក្សាទុកតម្លៃ</button>
+                </form>
+            </div>
+
+            <!-- Add Service Section -->
+            <div class="admin-card">
+                <h3>🎁 បន្ថែមសេវាកម្មថ្មី</h3>
+                <div class="success-message" id="addServiceMsg">សេវាកម្មបានបន្ថែមដោយជោគជ័យ!</div>
+                <form id="addServiceForm">
+                    <div class="form-group">
+                        <label>ឈ្មោះសេវាកម្ម</label>
+                        <input type="text" id="serviceName" placeholder="ឧ. Cursor AI Pro" required>
+                    </div>
+                    <div class="form-group">
+                        <label>សម្រាប់តម្លៃ</label>
+                        <input type="number" id="servicePrice" placeholder="$19.99" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>ការពិពណ៌នា</label>
+                        <textarea id="serviceDescription" rows="3" placeholder="ពិពណ៌នាលម្អិត..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>លក្ខណៈពិសេស (ដាច់ដោយរង្វង់ក្រម៉ា)</label>
+                        <textarea id="serviceFeatures" rows="3" placeholder="លក្ខណៈពិសេស ១, លក្ខណៈពិសេស ២..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn-admin">បន្ថែមសេវាកម្ម</button>
+                </form>
+            </div>
+
+            <!-- Accounts List Section -->
+            <div class="admin-card">
+                <h3>📋 គណនីដែលមាន</h3>
+                <div id="accountsList" class="list-items">
+                    <div class="list-item">
+                        <div class="list-item-text">
+                            <strong>គមនគណនីដែលបានរក្សាទុក</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Services List Section -->
+            <div class="admin-card">
+                <h3>🛍️ សេវាកម្មដែលមាន</h3>
+                <div id="servicesList" class="list-items">
+                    <div class="list-item">
+                        <div class="list-item-text">
+                            <strong>គមនសេវាកម្មដែលបានរក្សាទុក</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Admin Panel © 2026 | <a href="index.html">ត្រឡប់ទៅគេហទំព័រ</a></p>
+    </footer>
+
+    <script>
+        // Local storage keys
+        const STORAGE_ACCOUNTS = 'accountsList';
+        const STORAGE_PRICES = 'pricesList';
+        const STORAGE_SERVICES = 'servicesList';
+        const STORAGE_DEPOSITS = 'depositsList';
+        const STORAGE_EMAIL = 'emailSettings';
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAccounts();
+            loadServices();
+            loadDeposits();
+            loadEmailSettings();
+        });
+
+        // Deposit Management
+        document.getElementById('confirmDepositForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const deposit = {
+                id: Date.now(),
+                customerEmail: document.getElementById('customerEmail').value,
+                customerName: document.getElementById('customerName').value,
+                amount: parseFloat(document.getElementById('depositAmount').value),
+                method: document.getElementById('paymentMethod').value,
+                status: document.getElementById('depositStatus').value,
+                date: new Date().toLocaleString('km-KH')
+            };
+
+            let deposits = JSON.parse(localStorage.getItem(STORAGE_DEPOSITS)) || [];
+            deposits.push(deposit);
+            localStorage.setItem(STORAGE_DEPOSITS, JSON.stringify(deposits));
+
+            // When status is "completed", add balance to customer's account
+            if (deposit.status === 'completed') {
+                processCompletedDeposit(deposit);
+            }
+
+            // Send email if checked
+            if (document.getElementById('sendEmailConfirmation').checked) {
+                sendDepositConfirmationEmail(deposit);
+            }
+
+            showMessage('confirmDepositMsg');
+            this.reset();
+            loadDeposits();
+        });
+
+        // Process completed deposit: add amount to customer's balance in usersList
+        function processCompletedDeposit(deposit) {
+            if (deposit.status !== 'completed') return;
+
+            // Find customer by email in usersList
+            var users = JSON.parse(localStorage.getItem('usersList') || '[]');
+            var custIdx = users.findIndex(u => u.email === deposit.customerEmail);
+            
+            if (custIdx !== -1) {
+                // Add amount to customer's balance
+                users[custIdx].balance = Number((Number(users[custIdx].balance || 0) + deposit.amount).toFixed(2));
+                localStorage.setItem('usersList', JSON.stringify(users));
+
+                // If this customer is currently logged in, update currentUser too
+                var currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                if (currentUser && currentUser.email === deposit.customerEmail) {
+                    currentUser.balance = users[custIdx].balance;
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                }
+
+                console.log('✓ ដាក់ប្រាក់ $' + deposit.amount + ' ទៅ ' + deposit.customerEmail + '; សមតុល្យថ្មី: $' + users[custIdx].balance);
+            } else {
+                console.warn('អតិថិជនពិសេស ' + deposit.customerEmail + ' មិនបានរកឃើញក្នុង usersList');
+            }
+        }
+
+        // Email Settings
+        document.getElementById('emailSettingsForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const emailSettings = {
+                adminEmail: document.getElementById('adminEmail').value,
+                emailPassword: document.getElementById('emailPassword').value,
+                smtpServer: document.getElementById('smtpServer').value,
+                smtpPort: document.getElementById('smtpPort').value,
+                smtpSSL: document.getElementById('smtpSSL').checked
+            };
+
+            localStorage.setItem(STORAGE_EMAIL, JSON.stringify(emailSettings));
+            showMessage('saveEmailMsg');
+        });
+
+        function loadDeposits() {
+            const deposits = JSON.parse(localStorage.getItem(STORAGE_DEPOSITS)) || [];
+            const depositHistory = document.getElementById('depositHistory');
+            
+            if (deposits.length === 0) {
+                depositHistory.innerHTML = '<div class="list-item"><div class="list-item-text"><strong>គមនដាក់ប្រាក់ដែលបានកត់ត្រា</strong></div></div>';
+                return;
+            }
+
+            depositHistory.innerHTML = deposits.map(deposit => `
+                <div class="list-item">
+                    <div class="list-item-text">
+                        <strong>${deposit.customerName}</strong><br>
+                        ${deposit.customerEmail}<br>
+                        $${deposit.amount.toFixed(2)} | ${deposit.method} | 
+                        <span style="color: ${deposit.status === 'completed' ? '#27ae60' : deposit.status === 'pending' ? '#f39c12' : '#e74c3c'};">
+                            ${deposit.status}
+                        </span><br>
+                        <small>${deposit.date}</small>
+                    </div>
+                    <div class="list-item-actions">
+                        <button class="btn-small btn-edit" onclick="editDeposit(${deposit.id})">កែប្រែ</button>
+                        <button class="btn-small" onclick="deleteDeposit(${deposit.id})">លុប</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadEmailSettings() {
+            const settings = JSON.parse(localStorage.getItem(STORAGE_EMAIL)) || {};
+            if (settings.adminEmail) {
+                document.getElementById('adminEmail').value = settings.adminEmail;
+                document.getElementById('smtpServer').value = settings.smtpServer || 'smtp.gmail.com';
+                document.getElementById('smtpPort').value = settings.smtpPort || 587;
+                document.getElementById('smtpSSL').checked = settings.smtpSSL || true;
+            }
+        }
+
+        function sendDepositConfirmationEmail(deposit) {
+            // Note: This is a frontend notification alert. In production, use a backend service
+            alert(`អ៊ីមែលបានផ្ញើទៅ: ${deposit.customerEmail}\n\nលម្អិត:\nឈ្មោះ: ${deposit.customerName}\nចំនួន: $${deposit.amount.toFixed(2)}\nវិធីសាស្រ្ត: ${deposit.method}\n\nចំណាំ: ប្រើប្រាស់សេវាកម្ម Email Integration (Mailgun, SendGrid ឬ Google Sheets ដើម្បីផ្ញើអ៊ីមែលពិតប្រាកដ)`);
+        }
+
+        function deleteDeposit(id) {
+            if (confirm('តើអ្នកប្រាកដថាលុបដាក់ប្រាក់នេះ?')) {
+                let deposits = JSON.parse(localStorage.getItem(STORAGE_DEPOSITS)) || [];
+                deposits = deposits.filter(d => d.id !== id);
+                localStorage.setItem(STORAGE_DEPOSITS, JSON.stringify(deposits));
+                loadDeposits();
+            }
+        }
+
+        function editDeposit(id) {
+            alert('មុខងារកែប្រែនឹងមកដល់ក្នុងរៀងរាល់មួយទៀត');
+        }
+
+        // Add Account
+        document.getElementById('addAccountForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const account = {
+                id: Date.now(),
+                name: document.getElementById('accountName').value,
+                username: document.getElementById('accountUsername').value,
+                password: document.getElementById('accountPassword').value,
+                duration: document.getElementById('accountDuration').value
+            };
+
+            let accounts = JSON.parse(localStorage.getItem(STORAGE_ACCOUNTS)) || [];
+            accounts.push(account);
+            localStorage.setItem(STORAGE_ACCOUNTS, JSON.stringify(accounts));
+
+            showMessage('addAccountMsg');
+            this.reset();
+            loadAccounts();
+        });
+
+        // Update Price
+        document.getElementById('updatePriceForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const price = {
+                product: document.getElementById('productName').value,
+                month1: parseFloat(document.getElementById('price1month').value),
+                month6: parseFloat(document.getElementById('price6month').value),
+                year1: parseFloat(document.getElementById('price1year').value),
+                year2: parseFloat(document.getElementById('price2year').value)
+            };
+
+            let prices = JSON.parse(localStorage.getItem(STORAGE_PRICES)) || [];
+            const existingIndex = prices.findIndex(p => p.product === price.product);
+            
+            if (existingIndex > -1) {
+                prices[existingIndex] = price;
+            } else {
+                prices.push(price);
+            }
+
+            localStorage.setItem(STORAGE_PRICES, JSON.stringify(prices));
+            showMessage('updatePriceMsg');
+            this.reset();
+        });
+
+        // Add Service
+        document.getElementById('addServiceForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const service = {
+                id: Date.now(),
+                name: document.getElementById('serviceName').value,
+                price: parseFloat(document.getElementById('servicePrice').value),
+                description: document.getElementById('serviceDescription').value,
+                features: document.getElementById('serviceFeatures').value.split(',').map(f => f.trim())
+            };
+
+            let services = JSON.parse(localStorage.getItem(STORAGE_SERVICES)) || [];
+            services.push(service);
+            localStorage.setItem(STORAGE_SERVICES, JSON.stringify(services));
+
+            showMessage('addServiceMsg');
+            this.reset();
+            loadServices();
+        });
+
+        function loadAccounts() {
+            const accounts = JSON.parse(localStorage.getItem(STORAGE_ACCOUNTS)) || [];
+            const accountsList = document.getElementById('accountsList');
+            
+            if (accounts.length === 0) {
+                accountsList.innerHTML = '<div class="list-item"><div class="list-item-text"><strong>គមនគណនីដែលបានរក្សាទុក</strong></div></div>';
+                return;
+            }
+
+            accountsList.innerHTML = accounts.map(account => `
+                <div class="list-item">
+                    <div class="list-item-text">
+                        <strong>${account.name}</strong><br>
+                        ${account.username} | ${account.duration}
+                    </div>
+                    <div class="list-item-actions">
+                        <button class="btn-small btn-edit" onclick="editAccount(${account.id})">កែប្រែ</button>
+                        <button class="btn-small" onclick="deleteAccount(${account.id})">លុប</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadServices() {
+            const services = JSON.parse(localStorage.getItem(STORAGE_SERVICES)) || [];
+            const servicesList = document.getElementById('servicesList');
+            
+            if (services.length === 0) {
+                servicesList.innerHTML = '<div class="list-item"><div class="list-item-text"><strong>គមនសេវាកម្មដែលបានរក្សាទុក</strong></div></div>';
+                return;
+            }
+
+            servicesList.innerHTML = services.map(service => `
+                <div class="list-item">
+                    <div class="list-item-text">
+                        <strong>${service.name}</strong><br>
+                        $${service.price.toFixed(2)}
+                    </div>
+                    <div class="list-item-actions">
+                        <button class="btn-small btn-edit" onclick="editService(${service.id})">កែប្រែ</button>
+                        <button class="btn-small" onclick="deleteService(${service.id})">លុប</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function deleteAccount(id) {
+            if (confirm('តើអ្នកប្រាកដថាលុបគណនីនេះ?')) {
+                let accounts = JSON.parse(localStorage.getItem(STORAGE_ACCOUNTS)) || [];
+                accounts = accounts.filter(a => a.id !== id);
+                localStorage.setItem(STORAGE_ACCOUNTS, JSON.stringify(accounts));
+                loadAccounts();
+            }
+        }
+
+        function deleteService(id) {
+            if (confirm('តើអ្នកប្រាកដថាលុបសេវាកម្មនេះ?')) {
+                let services = JSON.parse(localStorage.getItem(STORAGE_SERVICES)) || [];
+                services = services.filter(s => s.id !== id);
+                localStorage.setItem(STORAGE_SERVICES, JSON.stringify(services));
+                loadServices();
+            }
+        }
+
+        function editAccount(id) {
+            alert('មុខងារកែប្រែនឹងមកដល់ក្នុងរៀងរាល់មួយទៀត');
+        }
+
+        function editService(id) {
+            alert('មុខងារកែប្រែនឹងមកដល់ក្នុងរៀងរាល់មួយទៀត');
+        }
+
+        function showMessage(elementId) {
+            const msg = document.getElementById(elementId);
+            msg.classList.add('show');
+            setTimeout(() => {
+                msg.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

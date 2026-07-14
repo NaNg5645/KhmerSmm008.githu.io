@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ហាងលក់គណនី - ទិញគណនីលក្ខណៈពិសេស</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f4f4f4;
+        }
+        
+        /* Header & Branding */
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 1rem;
+            text-align: center;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+        
+        /* Navigation Menu */
+        nav {
+            background: #2c3e50;
+            padding: 0.85rem 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .nav-links {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: color 0.3s ease;
+            padding: 0.5rem 1rem;
+        }
+
+        .btn-deposit {
+            background: #ff5a5f;
+            color: white;
+            border-radius: 999px;
+            padding: 0.65rem 1.2rem;
+            text-transform: none;
+            box-shadow: 0 8px 18px rgba(255, 90, 95, 0.22);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .btn-deposit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(255, 90, 95, 0.3);
+        }
+
+        .deposit-panel {
+            background: #fff;
+            border-radius: 16px;
+            padding: 1.75rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 90, 95, 0.18);
+            text-align: center;
+        }
+
+        .deposit-panel h3 {
+            margin-bottom: 0.8rem;
+            color: #2c3e50;
+        }
+
+        .deposit-panel p {
+            margin-bottom: 1rem;
+            color: #4a5568;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .deposit-actions {
+            display: flex;
+            justify-content: center;
+        }
+
+        .deposit-qr {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border: 1px dashed #ff5a5f;
+            border-radius: 14px;
+            background: #fff5f6;
+        }
+
+        .deposit-qr.visible {
+            display: flex;
+        }
+
+        .deposit-qr img {
+            width: 260px;
+            max-width: 100%;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        .deposit-qr p {
+            margin: 0;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: color 0.3s ease;
+            padding: 0.5rem 1rem;
+        }
+        
+        nav a:hover {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .section-title {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            color: #2c3e50;
+        }
+
+        
+        /* Product Cards - Responsive Grid */
+        .products {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        @media (max-width: 768px) {
+            .products {
+                grid-template-columns: 1fr;
+            }
+            
+            header h1 {
+                font-size: 1.8rem;
+            }
+            
+            nav ul {
+                gap: 1rem;
+            }
+            
+            nav a {
+                font-size: 0.9rem;
+                padding: 0.3rem 0.5rem;
+            }
+        }
+        
+        /* Product Image */
+        .product-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        
+        .product-card:hover .product-image {
+            transform: scale(1.05);
+        }
+        
+        /* Product Cards */
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border-color: #667eea;
+        }
+
+        .product-card:active {
+            transform: translateY(-4px) scale(0.99);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+        }
+
+        .product-card:active .product-image {
+            transform: scale(1.02);
+        }
+        
+        .product-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .product-header h3 {
+            font-size: 1.5rem;
+            margin: 0;
+        }
+        
+        .product-body {
+            padding: 1.5rem;
+        }
+        
+        .product-body p {
+            margin: 0.75rem 0;
+            font-size: 0.95rem;
+        }
+        
+        .product-body p.duration {
+            margin: 1rem 0 0.25rem;
+            color: #444;
+            font-weight: 600;
+        }
+        
+        .price {
+            font-size: 2rem;
+            color: #667eea;
+            font-weight: bold;
+            margin: 1.5rem 0;
+            text-align: center;
+        }
+
+        .duration-buttons {
+            display: none;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin: 1rem 0 0.5rem;
+        }
+
+        .product-card.show-duration .duration-buttons {
+            display: flex;
+        }
+
+        .duration-btn {
+            background: #eef2ff;
+            color: #2a3a70;
+            border: 1px solid #c3d0f0;
+            border-radius: 999px;
+            padding: 0.45rem 0.9rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .duration-btn.selected {
+            background: #667eea;
+            color: white;
+            border-color: #4b52d4;
+        }
+
+        .duration-btn:hover {
+            background: #d9e2ff;
+            transform: translateY(-1px);
+        }
+
+        .duration-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Buttons */
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.85rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            width: 100%;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-confirm {
+            background: linear-gradient(135deg, #10a37f 0%, #0b8b6b 100%);
+            color: white;
+            padding: 0.65rem 1rem;
+            border: none;
+            border-radius: 999px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            margin-top: 0.75rem;
+            display: inline-block;
+        }
+
+        .btn-confirm:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(16,163,127,0.18); }
+        
+        /* Features List */
+        .features {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .features li {
+            padding: 0.5rem 0;
+            color: #555;
+        }
+        
+        .features li:before {
+            content: "✓ ";
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+        
+        /* Footer */
+        footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+
+        /* Contact Section */
+        .contact-section {
+            background: #fff;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(102, 126, 234, 0.12);
+            text-align: center;
+        }
+
+        .contact-section h3 {
+            margin-bottom: 1rem;
+            color: #2c3e50;
+            font-size: 1.8rem;
+        }
+
+        .contact-section p {
+            margin-bottom: 1.5rem;
+            color: #4a5568;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .contact-methods {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .contact-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border: none;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .contact-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .contact-btn.telegram {
+            background: #0088cc;
+        }
+
+        .contact-btn.telegram:hover {
+            background: #006ba3;
+            box-shadow: 0 8px 20px rgba(0, 136, 204, 0.3);
+        }
+
+        .contact-btn.email {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        footer p {
+            margin: 0.5rem 0;
+        }
+        
+        footer p:first-child {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        /* Badge for Featured */
+        .badge {
+            display: inline-block;
+            background: #ff6b6b;
+            color: white;
+            padding: 0.3rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header & Branding -->
+    <header>
+        <h1>🛍️ ហាងលក់គណនីដ៏អស្ចារ្យ</h1>
+        <p>ទិញគណនីលក្ខណៈពិសេស - ដឹក្យសើ់ដោះលឿន ២៤/៧ ជំនួយ</p>
+    </header>
+    
+    <!-- Navigation Menu -->
+    <nav>
+        <ul class="nav-links">
+            <li><a href="#home">ទំព័រដើម</a></li>
+            <li><a href="#products">ផលិតផល</a></li>
+            <li><a href="#about">អំពីយើងខ្ញុំ</a></li>
+            <li><a href="#contact">ទាក់ទងយើងខ្ញុំ</a></li>
+            <li><a href="#faq">សំណួរដែលគេសួរញឹកញាប់</a></li>
+        </ul>
+        <div class="nav-actions">
+            <a id="navBalance" href="auth.html" class="btn btn-deposit" style="display:none">សមតុល្យ $0.00</a>
+            <a href="auth.html" class="btn btn-deposit">ចូលគណនី</a>
+            <button id="showDepositQR" class="btn btn-deposit">ដាក់ប្រាក់ចូល</button>
+        </div>
+    </nav>
+    
+    <!-- Main Container -->
+    <div class="container">
+        <h2 class="section-title">គណនីលក្ខណៈពិសេសដែលមាន</h2>
+        <section id="deposit" class="deposit-panel">
+            <h3>មុខងារដាក់ប្រាក់ចូល</h3>
+            <p>ចុចប៊ូតុង "ដាក់ប្រាក់ចូល" នៅខាងលើដើម្បីបង្ហាញ QR និងទូទាត់។</p>
+            <div id="depositQR" class="deposit-qr" aria-hidden="true">
+                <p>សូមស្កេន QR ខាងក្រោមដើម្បីដាក់ប្រាក់ចូល</p>
+                <img src="photo_2026-07-13_12-15-37.jpg" alt="QR Code ដាក់ប្រាក់" />
+                <p>ទូទាត់តាម QR ដើម្បីបញ្ចប់ការទូទាត់</p>
+            </div>
+        </section>
+        <!-- Product Cards with Responsive Design -->
+        <div class="products">
+            <!-- Product 1 - CapCut Pro -->
+            <div class="product-card">
+                <img src="https://via.placeholder.com/300x250/000000/FFFFFF?text=CapCut+Pro" alt="CapCut Pro" class="product-image">
+                <div class="product-header">
+                    <h3>CapCut Pro</h3>
+                </div>
+                <div class="product-body">
+                    <span class="badge">ពេញនិយម</span>
+                    <p><strong>លក្ខណៈពិសេស៖</strong></p>
+                    <ul class="features">
+                        <li>កាត់ក្នុងដែលលឿន</li>
+                        <li>ឧបករណ៍ផ្នែកលម្អិត</li>
+                        <li>គុណភាព HD</li>
+                        <li>ធានាកម្មន្ត្រ័យ ១ ឆ្នាំ</li>
+                    </ul>
+                    <p class="duration">រយៈពេលមាន៖</p>
+                    <div class="duration-buttons">
+                        <button type="button" class="duration-btn">1 ខែ</button>
+                        <button type="button" class="duration-btn">6 ខែ</button>
+                        <button type="button" class="duration-btn">1 ឆ្នាំ</button>
+                        <button type="button" class="duration-btn">2 ឆ្នាំ</button>
+                    </div>
+                    <div class="price">$12.99</div>
+                    <button class="btn btn-order">ដាក់ចូលក្រ ដំណើរ</button>
+                </div>
+            </div>
+            
+            <!-- Product 2 - Cursor AI + Pro -->
+            <div class="product-card">
+                <img src="https://via.placeholder.com/300x250/3B3B3B/00D9FF?text=Cursor+AI" alt="Cursor AI Pro" class="product-image">
+                <div class="product-header">
+                    <h3>Cursor AI + Pro</h3>
+                </div>
+                <div class="product-body">
+                    <span class="badge">ថ្មី</span>
+                    <p><strong>លក្ខណៈពិសេស៖</strong></p>
+                    <ul class="features">
+                        <li>ជំនួយ AI ឆ្លាត</li>
+                        <li>កម្មវិធីកូដលឿន</li>
+                        <li>បង្វិលក្រមុខលម្អិត</li>
+                        <li>ធានាកម្មន្ត្រ័យ ១ ឆ្នាំ</li>
+                    </ul>
+                    <p class="duration">រយៈពេលមាន៖</p>
+                    <div class="duration-buttons">
+                        <button type="button" class="duration-btn">1 ខែ</button>
+                        <button type="button" class="duration-btn">6 ខែ</button>
+                        <button type="button" class="duration-btn">1 ឆ្នាំ</button>
+                        <button type="button" class="duration-btn">2 ឆ្នាំ</button>
+                    </div>
+                    <div class="price">$20.99</div>
+                    <button class="btn btn-order">ដាក់ចូលក្រ ដំណើរ</button>
+                </div>
+            </div>
+            
+            <!-- Product 3 - YouTube Premium -->
+            <div class="product-card">
+                <img src="https://via.placeholder.com/300x250/FF0000/FFFFFF?text=YouTube+Premium" alt="YouTube Premium" class="product-image">
+                <div class="product-header">
+                    <h3>YouTube លក្ខណៈពិសេស</h3>
+                </div>
+                <div class="product-body">
+                    <p><strong>លក្ខណៈពិសេស៖</strong></p>
+                    <ul class="features">
+                        <li>គ្មានការផ្សាយពាណិជ្ជកម្ម</li>
+                        <li>មើលក្រៅបណ្ដាញ</li>
+                        <li>ចាក់ក្នុងផ្ទៃខាងក្រោយ</li>
+                        <li>ការធានា ៦ ខែ</li>
+                    </ul>
+                    <p class="duration">រយៈពេលមាន៖</p>
+                    <div class="duration-buttons">
+                        <button type="button" class="duration-btn">1 ខែ</button>
+                        <button type="button" class="duration-btn">6 ខែ</button>
+                        <button type="button" class="duration-btn">1 ឆ្នាំ</button>
+                        <button type="button" class="duration-btn">2 ឆ្នាំ</button>
+                    </div>
+                    <div class="price">$13.99</div>
+                    <button class="btn btn-order">ដាក់ចូលក្រ ដំណើរ</button>
+                </div>
+            </div>
+            
+            <!-- Product 4 - VPN Surfshark -->
+            <div class="product-card">
+                <img src="https://via.placeholder.com/300x250/FF6B35/FFFFFF?text=VPN+Surfshark" alt="VPN Surfshark" class="product-image">
+                <div class="product-header">
+                    <h3>VPN Surfshark</h3>
+                </div>
+                <div class="product-body">
+                    <span class="badge">សុវត្ថិ</span>
+                    <p><strong>លក្ខណៈពិសេស៖</strong></p>
+                    <ul class="features">
+                        <li>សុវត្ថិភាពលើអ៊ីនធឺណេត</li>
+                        <li>ឧបករណ៍មិនកំណត់</li>
+                        <li>មិនមានកំណត់ត្រា</li>
+                        <li>ការធានា ១ ឆ្នាំ</li>
+                    </ul>
+                    <p class="duration">រយៈពេលមាន៖</p>
+                    <div class="duration-buttons">
+                        <button type="button" class="duration-btn">1 ខែ</button>
+                        <button type="button" class="duration-btn">6 ខែ</button>
+                        <button type="button" class="duration-btn">1 ឆ្នាំ</button>
+                        <button type="button" class="duration-btn">2 ឆ្នាំ</button>
+                    </div>
+                    <div class="price">$11.99</div>
+                    <button class="btn btn-order">ដាក់ចូលក្រ ដំណើរ</button>
+                </div>
+            </div>
+            
+            <!-- Product 5 - Chat GPT Pro -->
+            <div class="product-card">
+                <img src="https://via.placeholder.com/300x250/10A37F/FFFFFF?text=ChatGPT+Pro" alt="Chat GPT Pro" class="product-image">
+                <div class="product-header">
+                    <h3>Chat GPT Pro</h3>
+                </div>
+                <div class="product-body">
+                    <p><strong>លក្ខណៈពិសេស៖</strong></p>
+                    <ul class="features">
+                        <li>ជំនួយ AI ខ្លាំង</li>
+                        <li>សរសេរឯកសារលឿន</li>
+                        <li>ដោះស្រាយសំណួរស្មុគស្មាញ</li>
+                        <li>ការធានា ១ ឆ្នាំ</li>
+                    </ul>
+                    <p class="duration">រយៈពេលមាន៖</p>
+                    <div class="duration-buttons">
+                        <button type="button" class="duration-btn">1 ខែ</button>
+                        <button type="button" class="duration-btn">6 ខែ</button>
+                        <button type="button" class="duration-btn">1 ឆ្នាំ</button>
+                        <button type="button" class="duration-btn">2 ឆ្នាំ</button>
+                    </div>
+                    <div class="price">$20.00</div>
+                    <button class="btn btn-order">ដាក់ចូលក្រ ដំណើរ</button>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    
+    <!-- Contact Section -->
+    <div class="container">
+        <section id="contact" class="contact-section">
+            <h3>ទាក់ទងយើងខ្ញុំ</h3>
+            <p>មាន​សំណួរ ឬ​ត្រូវការ​ជំនួយ? សូម​ក្នុង​ការ​ទាក់ទង​ដល់​នាម​ក្រុម​របស់​យើង​តាម​រយៈ Telegram ឬ​អ៊ីមែល។</p>
+            <div class="contact-methods">
+                <a href="https://t.me/KhmerSmm099" class="contact-btn telegram" target="_blank">💬 ទាក់ទង Telegram</a>
+                <a href="mailto:support@accountstore.com" class="contact-btn email">✉️ អ៊ីមែល</a>
+            </div>
+        </section>
+    </div>
+    
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 ហាងលក់គណនី។ រក្សាសិទ្ធិទាំងអស់។</p>
+        <p>✓ ការទូរទាត់ដែលមានសុវត្ថិភាព | ✓ ដឹក្យសើ់ដោះលឿន | ✓ ជំនួយអតិថិជន ២៤/៧</p>
+        <p>សម្រាប់សំណួរលម្អិត៖ support@accountstore.com | <a href="admin.html" style="color: #667eea;">Admin Panel</a></p>
+    </footer>
+    <script>
+        // Only handle clicks for product order buttons and require login
+        document.querySelectorAll('.btn-order').forEach(function(button) {
+            button.addEventListener('click', function() {
+                // Require login: `currentUser` stored by auth.html
+                var currentUser = localStorage.getItem('currentUser');
+                if (!currentUser) {
+                    var goLogin = confirm('សូមចុះឈ្មោះ ឬ ចូលគណនី មុនពេលទិញ។\nចុច OK ដើម្បីចុះឈ្មោះ/ចូល។');
+                    if (goLogin) {
+                        var returnUrl = encodeURIComponent(window.location.href);
+                        window.location.href = 'auth.html?return=' + returnUrl + '&tab=register';
+                    }
+                    return;
+                }
+
+                var card = button.closest('.product-card');
+                if (!card) return;
+                card.classList.add('show-duration');
+                var firstDuration = card.querySelector('.duration-btn');
+                if (firstDuration) {
+                    firstDuration.classList.add('selected');
+                }
+            });
+        });
+
+        document.querySelectorAll('.duration-btn').forEach(function(durationBtn) {
+            durationBtn.addEventListener('click', function() {
+                var card = durationBtn.closest('.product-card');
+                if (!card) return;
+                card.querySelectorAll('.duration-btn').forEach(function(btn) {
+                    btn.classList.remove('selected');
+                });
+                durationBtn.classList.add('selected');
+                // ensure confirm purchase button exists
+                ensureConfirmButton(card);
+            });
+        });
+
+        // Create or show confirm button inside card
+        function ensureConfirmButton(card) {
+            var existing = card.querySelector('.btn-confirm');
+            if (existing) {
+                existing.style.display = 'inline-block';
+                return existing;
+            }
+
+            var confirmBtn = document.createElement('button');
+            confirmBtn.className = 'btn-confirm';
+            confirmBtn.textContent = 'បញ្ជាទិញ';
+            confirmBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                // Verify login
+                var currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                if (!currentUser) {
+                    if (confirm('សូមចូលគណនី មុនពេលបញ្ជាទិញ។ ចុច OK ដើម្បីចុះឈ្មោះ/ចូល។')) {
+                        var returnUrl = encodeURIComponent(window.location.href);
+                        window.location.href = 'auth.html?return=' + returnUrl + '&tab=register';
+                    }
+                    return;
+                }
+
+                // Get price from card
+                var priceText = card.querySelector('.price').textContent || '';
+                var price = parseFloat(priceText.replace(/[^0-9\.\-]+/g, '')) || 0;
+
+                // Ensure currentUser has balance property
+                var users = JSON.parse(localStorage.getItem('usersList') || '[]');
+                var userIndex = users.findIndex(u => (u.email === currentUser.email && u.username === currentUser.username) || u.id === currentUser.id);
+                var storedUser = (userIndex !== -1) ? users[userIndex] : currentUser;
+                var balance = Number(storedUser.balance || 0);
+
+                if (balance < price) {
+                    if (confirm('សូមទោស - សមតុល្យក្នុងគណនីមិនគ្រប់គ្រាន់។ ចង់ដាក់ប្រាក់ឥឡូវនេះទេ?')) {
+                        // Scroll to deposit panel
+                        var depositQR = document.getElementById('deposit');
+                        if (depositQR) depositQR.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    return;
+                }
+
+                // Deduct balance and save
+                var newBalance = (balance - price);
+                if (userIndex !== -1) {
+                    users[userIndex].balance = newBalance;
+                    localStorage.setItem('usersList', JSON.stringify(users));
+                    localStorage.setItem('currentUser', JSON.stringify(users[userIndex]));
+                } else {
+                    // update currentUser object and save
+                    currentUser.balance = newBalance;
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                }
+
+                // Get account credentials for delivery
+                var productName = card.querySelector('.product-header h3').textContent.trim();
+                var accounts = JSON.parse(localStorage.getItem('accountsList') || '[]');
+                var availableAccount = accounts.find(a => a.name.toLowerCase().includes(productName.toLowerCase().split(' ')[0])) || accounts[0];
+                
+                // Record purchase with account details
+                var purchases = JSON.parse(localStorage.getItem('purchasesList') || '[]');
+                var purchase = {
+                    id: Date.now(),
+                    userId: storedUser.id || currentUser.id,
+                    product: productName,
+                    price: price,
+                    purchasedAt: new Date().toLocaleString('km-KH')
+                };
+                
+                // Add account credentials if available
+                if (availableAccount) {
+                    purchase.accountUsername = availableAccount.username;
+                    purchase.accountPassword = availableAccount.password;
+                }
+                
+                purchases.push(purchase);
+                localStorage.setItem('purchasesList', JSON.stringify(purchases));
+
+                // Show success with account details
+                var successMsg = '✓ ទិញដោយជោគជ័យ!\n\nសមតុល្យសល់: $' + newBalance.toFixed(2);
+                if (availableAccount) {
+                    successMsg += '\n\n📧 គណនីលម្អិត:\nឈ្មោះប្រើប្រាស់: ' + availableAccount.username + '\nពាក្យសម្ងាត់: ' + availableAccount.password;
+                    successMsg += '\n\n(អ៊ីមែលលម្អិតបានផ្ញើទៅលិខិតផ្សាយ)';
+                    
+                    // Send simulated email with credentials
+                    sendCredentialsEmail(storedUser || currentUser, productName, availableAccount);
+                }
+                alert(successMsg);
+
+                // Optionally hide confirm button
+                confirmBtn.style.display = 'none';
+            });
+
+            var body = card.querySelector('.product-body');
+            body.appendChild(confirmBtn);
+            return confirmBtn;
+        }
+
+        // Simulate sending email with account credentials
+        function sendCredentialsEmail(customer, product, account) {
+            var email = {
+                id: Date.now(),
+                to: customer.email,
+                customerName: customer.name,
+                product: product,
+                username: account.username,
+                password: account.password,
+                sentAt: new Date().toLocaleString('km-KH')
+            };
+
+            // Store email in simulated email log
+            var emailLog = JSON.parse(localStorage.getItem('emailsSent') || '[]');
+            emailLog.push(email);
+            localStorage.setItem('emailsSent', JSON.stringify(emailLog));
+
+            console.log('📧 អ៊ីមែលបានផ្ញើទៅ: ' + email.to);
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('ដល់ៈ ' + customer.name + ' (' + customer.email + ')');
+            console.log('ផលិតផល៖ ' + product);
+            console.log('ឈ្មោះប្រើប្រាស់៖ ' + account.username);
+            console.log('ពាក្យសម្ងាត់៖ ' + account.password);
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━');
+        }
+
+        var showDepositQR = document.getElementById('showDepositQR');
+        if (showDepositQR) {
+            showDepositQR.addEventListener('click', function() {
+                var depositQR = document.getElementById('depositQR');
+                if (!depositQR) return;
+                depositQR.classList.add('visible');
+                depositQR.setAttribute('aria-hidden', 'false');
+                depositQR.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        }
+
+        // Show logged-in user's balance in navbar and handle depositAmount/showQR params
+        function getQueryParam(name) {
+            var params = new URLSearchParams(window.location.search);
+            return params.get(name);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                var currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                var navBal = document.getElementById('navBalance');
+                if (currentUser && navBal) {
+                    var bal = Number(currentUser.balance || 0).toFixed(2);
+                    navBal.textContent = 'សមតុល្យ $' + bal;
+                    navBal.style.display = 'inline-flex';
+                }
+
+                // If depositAmount/showQR provided in URL, require login first
+                var depositAmount = getQueryParam('depositAmount');
+                var showQRParam = getQueryParam('showQR');
+                if (depositAmount || showQRParam) {
+                    var current = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                    if (!current) {
+                        // redirect to auth to register/login before deposit
+                        var returnUrl = encodeURIComponent(window.location.href);
+                        window.location.href = 'auth.html?return=' + returnUrl + '&tab=register';
+                        return;
+                    }
+
+                    if (depositAmount) {
+                        var depositQR = document.getElementById('depositQR');
+                        if (depositQR) {
+                            depositQR.classList.add('visible');
+                            depositQR.setAttribute('aria-hidden', 'false');
+                            var existingAmt = document.getElementById('depositAmountDisplay');
+                            if (!existingAmt) {
+                                var p = document.createElement('p');
+                                p.id = 'depositAmountDisplay';
+                                p.style.fontWeight = '700';
+                                p.style.color = '#b83232';
+                                p.textContent = 'ចំនួនដែលត្រូវដាក់ប្រាក់៖ $' + Number(depositAmount).toFixed(2);
+                                depositQR.insertBefore(p, depositQR.firstChild.nextSibling);
+                            } else {
+                                existingAmt.textContent = 'ចំនួនដែលត្រូវដាក់ប្រាក់៖ $' + Number(depositAmount).toFixed(2);
+                            }
+                            depositQR.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    } else if (showQRParam === '1') {
+                        var depositQR2 = document.getElementById('depositQR');
+                        if (depositQR2) {
+                            depositQR2.classList.add('visible');
+                            depositQR2.setAttribute('aria-hidden', 'false');
+                            depositQR2.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                }
+            } catch (e) {}
+        });
+    </script>
+</body>
+</html>
