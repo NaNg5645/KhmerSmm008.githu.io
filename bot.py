@@ -1,27 +1,44 @@
 import os
-import asyncio
 import sys
+import asyncio
 import threading
+import subprocess
+import logging
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
-# Windows event loop fix for Pyrogram compatibility with Python 3.10+
+# ----------------- Render Web Server (Port Binding) -----------------
+class SimpleHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is running 24/7!")
+
+def run_web():
+    port = int(os.environ.get("PORT", 8080))
+    server = HTTPServer(("0.0.0.0", port), SimpleHandler)
+    server.serve_forever()
+
+# បើកដំណើរការ Web Server ក្នុង background កុំឱ្យ Render បិទ
+threading.Thread(target=run_web, daemon=True).start()
+
+# ----------------- Windows event loop fix -----------------
 if sys.platform == 'win32':
     try:
         asyncio.get_event_loop()
     except RuntimeError:
         asyncio.set_event_loop(asyncio.new_event_loop())
 
-import subprocess
-import logging
 from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, Message
+from pyrogram.enums import ParseMode
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from google import genai
 import edge_tts
 
 # ----------------- Configuration -----------------
 API_ID = 24900598
 API_HASH = "9dc6d9d36a16cccbdadd9aaa2cd3533a"
-GEMINI_API_KEY = "AQ.Ab8RN6LYTYANfXCmCKgalrzu-oGBq7quacDjkAsBsD6AepERMw"
-BOT_TOKEN = "8749297297:AAEvWT7qku12vRkcsbkX9oE117cCWWpPrCY"
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AQ.Ab8RN6LYTYANfXCmCKgalrzu-oGBq7quacDjkAsBsD6AepERMw")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8749297297:AAEvWT7qku12vRkcsbkX9oE117cCWWpPrCY")
 
 client_gemini = genai.Client(api_key=GEMINI_API_KEY)
 
@@ -44,10 +61,10 @@ def extract_fast_audio(video_path, audio_path):
     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
 
 def translate_fast_with_gemini(audio_path):
-    """បកប្រែដោយប្រើ Prompt ខ្លី ដើម្បីកុំឱ្យ AI គិតយូរ"""
+    """បកប្រែដោយប្រើ Prompt ខ្លី"""
     try:
         audio_file = client_gemini.files.upload(file=audio_path)
-        prompt = "Translate all speech in this audio to spoken Khmer directly. Output only the Khmer translation."
+        prompt = "Translate all speech in this audio to spoken Khmer directly. Output only the Khmer translation text without notes."
         
         response = client_gemini.models.generate_content(
             model="gemini-2.5-flash",
@@ -61,7 +78,7 @@ def translate_fast_with_gemini(audio_path):
             
         return response.text.strip() if response.text else ""
     except Exception as e:
-        print(f"Error AI: {e} - azzzzz.py:64")
+        print(f"Error AI: {e}")
         return ""
 
 async def generate_khmer_voice(text, voice_code, output_audio):
@@ -70,7 +87,7 @@ async def generate_khmer_voice(text, voice_code, output_audio):
     await communicate.save(output_audio)
 
 def merge_video_fast(video_path, khmer_audio_path, output_video):
-    """ផ្គុំវីដេអូល្បឿនលឿនបំផុត (ចំណាយពេល ១-២ វិនាទី)"""
+    """ផ្គុំវីដេអូល្បឿនលឿនបំផុត"""
     subprocess.run([
         "ffmpeg", "-y",
         "-i", video_path,
@@ -104,7 +121,7 @@ async def handle_video(client, message):
         khmer_text = translate_fast_with_gemini(audio_orig)
 
         if not khmer_text:
-            await status_msg.edit_text("⚠️ មិនអាចស្ដាប់ឮសំឡេងក្នុងវីដេអូនេះទេ។")
+            await status_msg.edit_text("⚠️ មិនអាចស្ដាប់ឮ ឬបកប្រែសំឡេងក្នុងវីដេអូនេះទេ។")
             if os.path.exists(input_video): os.remove(input_video)
             return
 
@@ -122,14 +139,16 @@ async def handle_video(client, message):
 
         preview = khmer_text[:200] + "..." if len(khmer_text) > 200 else khmer_text
         await status_msg.edit_text(
-            f"📝 **អត្ថបទបកប្រែ៖**\n_{preview}_\n\n👇 **សូមជ្រើសរើសសំឡេង៖**",
+            f"📝 **អត្ថបទបកប្រែ៖**\n{preview}\n\n👇 **សូមជ្រើសរើសសំឡេង៖**",
             reply_markup=buttons,
-            parse_mode="Markdown"
+            parse_mode=ParseMode.DEFAULT
         )
 
     except Exception as e:
-        print(f"Error: {e} - azzzzz.py:131")
+        print(f"Error handling video: {e}")
         await status_msg.edit_text("❌ មានបញ្ហាក្នុងការដំណើរការ។")
+        if os.path.exists(input_video):
+            os.remove(input_video)
     finally:
         if os.path.exists(audio_orig):
             os.remove(audio_orig)
@@ -154,7 +173,6 @@ async def on_voice_select(client, callback: CallbackQuery):
     output_video = f"out_{user_id}.mp4"
 
     try:
-        # បង្កើតសំឡេង និងផ្គុំ
         await generate_khmer_voice(khmer_text, voice_code, audio_khmer)
         merge_video_fast(input_video, audio_khmer, output_video)
 
@@ -169,7 +187,7 @@ async def on_voice_select(client, callback: CallbackQuery):
         await callback.message.delete()
 
     except Exception as e:
-        print(f"Error render: {e} - azzzzz.py:172")
+        print(f"Error rendering: {e}")
         await callback.edit_message_text("❌ បរាជ័យក្នុងការ Render វីដេអូ។")
     finally:
         for f in [input_video, audio_khmer, output_video]:
@@ -178,6 +196,5 @@ async def on_voice_select(client, callback: CallbackQuery):
         user_sessions.pop(user_id, None)
 
 if __name__ == "__main__":
-    print("🚀 Bot ឥតគិតថ្លៃ កំពុងដំណើរការ... - azzzzz.py:181")
-
+    print("🚀 Bot កំពុងដំណើរការ...")
     app.run()
