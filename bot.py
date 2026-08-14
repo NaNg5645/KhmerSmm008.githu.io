@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import asyncio
 import threading
 import subprocess
@@ -8,7 +9,7 @@ import traceback
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import imageio_ffmpeg
 
-# យកទីតាំង FFmpeg ផ្លូវការដែលដំណើរការលើ Render
+# យកទីតាំង FFmpeg ផ្លូវការ
 FFMPEG_PATH = imageio_ffmpeg.get_ffmpeg_exe()
 
 # ----------------- Render Web Server (Port Binding) -----------------
@@ -57,29 +58,34 @@ app = Client("free_fast_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TO
 
 # ----------------- Video Processing & AI -----------------
 def translate_video_with_gemini(video_path):
-    """បញ្ជូនវីដេអូទៅ Gemini AI ដោយផ្ទាល់ដើម្បីស្ដាប់ និងបកប្រែជាភាសាខ្មែរ"""
+    """Upload វីដេអូ រង់ចាំឱ្យរួចរាល់ រួចបកប្រែជាភាសាខ្មែរ"""
+    video_file = client_gemini.files.upload(file=video_path)
+    
+    # រង់ចាំឱ្យ Gemini File Processing ចប់សិន
+    while video_file.state.name == "PROCESSING":
+        time.sleep(2)
+        video_file = client_gemini.files.get(name=video_file.name)
+        
+    if video_file.state.name == "FAILED":
+        raise Exception("Gemini video processing failed.")
+
+    prompt = (
+        "Listen to all spoken words in this video. "
+        "Translate and transcribe them accurately into spoken Khmer language. "
+        "Output ONLY the plain Khmer translation text. Do not add intro, notes, or english."
+    )
+    
+    response = client_gemini.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=[video_file, prompt]
+    )
+    
     try:
-        video_file = client_gemini.files.upload(file=video_path)
-        prompt = (
-            "Listen to all spoken dialogues in this video. "
-            "Translate and transcribe them accurately into spoken Khmer language. "
-            "Output ONLY the plain Khmer translation text. Do not add introductions, notes, or english."
-        )
+        client_gemini.files.delete(name=video_file.name)
+    except Exception:
+        pass
         
-        response = client_gemini.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=[video_file, prompt]
-        )
-        
-        try:
-            client_gemini.files.delete(name=video_file.name)
-        except Exception:
-            pass
-            
-        return response.text.strip() if response.text else ""
-    except Exception as e:
-        print(f"Error AI Translation: {e}")
-        return ""
+    return response.text.strip() if response.text else ""
 
 async def generate_khmer_voice(text, voice_code, output_audio):
     """បង្កើតសំឡេងខ្មែរតាម Edge-TTS"""
@@ -116,11 +122,11 @@ async def handle_video(client, message):
     try:
         await message.download(file_name=input_video)
         
-        await status_msg.edit_text("⚡ [2/4] កំពុងស្ដាប់សំឡេង និងបកប្រែជាភាសាខ្មែរ...")
+        await status_msg.edit_text("⚡ [2/4] កំពុងស្ដាប់សំឡេង និងបកប្រែជាភាសាខ្មែរតាមរយៈ AI...")
         khmer_text = translate_video_with_gemini(input_video)
 
         if not khmer_text:
-            await status_msg.edit_text("⚠️ មិនអាចស្ដាប់ឮ ឬបកប្រែសំឡេងក្នុងវីដេអូនេះបានទេ។")
+            await status_msg.edit_text("⚠️ មិនអាចស្ដាប់ឮសំឡេងនិយាយក្នុងវីដេអូនេះទេ។")
             if os.path.exists(input_video): os.remove(input_video)
             return
 
@@ -145,7 +151,7 @@ async def handle_video(client, message):
 
     except Exception as e:
         print(f"Error handling video: {traceback.format_exc()}")
-        await status_msg.edit_text(f"❌ កំហុសដំណើរការ:\n`{str(e)[:150]}`")
+        await status_msg.edit_text(f"❌ កំហុសដំណើរការ:\n`{str(e)[:250]}`")
         if os.path.exists(input_video):
             os.remove(input_video)
 
@@ -186,7 +192,7 @@ async def on_voice_select(client, callback: CallbackQuery):
 
     except Exception as e:
         print(f"Error render: {traceback.format_exc()}")
-        await callback.edit_message_text(f"❌ បរាជ័យក្នុងការផ្គុំវីដេអូ:\n`{str(e)[:150]}`")
+        await callback.edit_message_text(f"❌ បរាជ័យក្នុងការផ្គុំវីដេអូ:\n`{str(e)[:250]}`")
     finally:
         for f in [input_video, audio_khmer, output_video]:
             if os.path.exists(f):
