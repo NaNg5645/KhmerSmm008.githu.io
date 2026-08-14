@@ -7,7 +7,7 @@ import logging
 import traceback
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-# ប្រើ static_ffmpeg សម្រាប់ Render
+# ដំណើរការ ffmpeg លើ Render
 import static_ffmpeg
 static_ffmpeg.add_paths()
 
@@ -25,7 +25,7 @@ def run_web():
 
 threading.Thread(target=run_web, daemon=True).start()
 
-# ----------------- Pyrogram & Event Loop Fix -----------------
+# ----------------- Pyrogram & Windows Fix -----------------
 if sys.platform == 'win32':
     try:
         asyncio.get_event_loop()
@@ -57,22 +57,22 @@ app = Client("free_fast_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TO
 
 # ----------------- Fast Functions -----------------
 def extract_fast_audio(video_path, audio_path):
-    """ដកស្រង់សំឡេងចេញពីវីដេអូ ប្រសិនបើវីដេអូគ្មានសំឡេង វានឹង return False"""
-    result = subprocess.run([
+    """ដកស្រង់សំឡេងចេញជា MP3 ដោយសុវត្ថិភាពបំផុត"""
+    cmd = [
         "ffmpeg", "-y", "-i", video_path,
-        "-vn", "-acodec", "libmp3lame", "-b:a", "32k", "-ar", "16000", "-ac", "1",
+        "-vn", "-q:a", "5",
         audio_path
-    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    
-    # ពិនិត្យមើលថាតើ File សំឡេងទាញចេញបានជោគជ័យ និងមានទំហំធំជាង 0 byte ឬអត់
-    if result.returncode == 0 and os.path.exists(audio_path) and os.path.getsize(audio_path) > 0:
+    ]
+    res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if os.path.exists(audio_path) and os.path.getsize(audio_path) > 0:
         return True
     return False
 
 def translate_fast_with_gemini(audio_path):
+    """ផ្ញើសំឡេងទៅកាន់ Gemini ដើម្បីបកប្រែជាភាសាខ្មែរ"""
     try:
         audio_file = client_gemini.files.upload(file=audio_path)
-        prompt = "Listen to this audio. Translate and transcribe all spoken words directly into spoken Khmer language. If there is no speech, reply with NO_SPEECH. Output ONLY the Khmer text."
+        prompt = "Listen to this audio. Translate and transcribe all spoken content directly into spoken Khmer language. Output ONLY the Khmer translation text without any explanations or english notes."
         
         response = client_gemini.models.generate_content(
             model="gemini-2.5-flash",
@@ -84,19 +84,18 @@ def translate_fast_with_gemini(audio_path):
         except Exception:
             pass
             
-        res_text = response.text.strip() if response.text else ""
-        if "NO_SPEECH" in res_text:
-            return ""
-        return res_text
+        return response.text.strip() if response.text else ""
     except Exception as e:
-        print(f"Error AI Translation: {e}")
+        print(f"AI Translation Error: {e}")
         return ""
 
 async def generate_khmer_voice(text, voice_code, output_audio):
+    """បង្កើតសំឡេងនិយាយភាសាខ្មែរ"""
     communicate = edge_tts.Communicate(text, voice_code)
     await communicate.save(output_audio)
 
 def merge_video_fast(video_path, khmer_audio_path, output_video):
+    """ផ្គុំសំឡេងខ្មែរថ្មីចូលទៅក្នុងវីដេអូ"""
     subprocess.run([
         "ffmpeg", "-y",
         "-i", video_path,
@@ -107,12 +106,12 @@ def merge_video_fast(video_path, khmer_audio_path, output_video):
         "-c:a", "aac",
         "-shortest",
         output_video
-    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+    ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
 
-# ----------------- Bot Handlers -----------------
+# ----------------- Handlers -----------------
 @app.on_message(filters.command("start"))
 async def start_cmd(client, message):
-    await message.reply_text("👋 សួស្តី! សូមផ្ញើវីដេអូដែលមានសំឡេងមនុស្សនិយាយដើម្បីបកប្រែជាភាសាខ្មែរ។")
+    await message.reply_text("👋 សួស្តី! សូមផ្ញើវីដេអូដើម្បីបកប្រែជាភាសាខ្មែរ។")
 
 @app.on_message(filters.video | filters.document)
 async def handle_video(client, message):
@@ -125,18 +124,18 @@ async def handle_video(client, message):
     try:
         await message.download(file_name=input_video)
         
-        await status_msg.edit_text("⚡ [2/4] កំពុងស្ដាប់ និងផ្ញើទៅកាន់ AI បកប្រែ...")
+        await status_msg.edit_text("⚡ [2/4] កំពុងស្ដាប់ និងបកប្រែជាភាសាខ្មែរ...")
         has_audio = extract_fast_audio(input_video, audio_orig)
 
         if not has_audio:
-            await status_msg.edit_text("⚠️ **វីដេអូនេះគ្មានសំឡេង (Mute/No Audio) ទេ!**\nសូមផ្ញើវីដេអូដែលមានសំឡេងមនុស្សនិយាយ។")
+            await status_msg.edit_text("⚠️ មិនអាចដកស្រង់សំឡេងពីវីដេអូបានទេ។")
             if os.path.exists(input_video): os.remove(input_video)
             return
 
         khmer_text = translate_fast_with_gemini(audio_orig)
 
         if not khmer_text:
-            await status_msg.edit_text("⚠️ មិនឮសំឡេងមនុស្សនិយាយ ឬ AI មិនអាចស្ដាប់បានក្នុងវីដេអូនេះទេ។")
+            await status_msg.edit_text("⚠️ មិនអាចបកប្រែសំឡេងក្នុងវីដេអូនេះបានទេ (សូមពិនិត្យមើលសំឡេងនិយាយ)។")
             if os.path.exists(input_video): os.remove(input_video)
             return
 
@@ -152,16 +151,16 @@ async def handle_video(client, message):
             ]
         ])
 
-        preview = khmer_text[:200] + "..." if len(khmer_text) > 200 else khmer_text
+        preview = khmer_text[:250] + "..." if len(khmer_text) > 250 else khmer_text
         await status_msg.edit_text(
-            f"📝 **អត្ថបទបកប្រែបាន៖**\n{preview}\n\n👇 **សូមជ្រើសរើសសំឡេងអាន៖**",
+            f"📝 **អត្ថបទបកប្រែបាន៖**\n\n{preview}\n\n👇 **សូមជ្រើសរើសសំឡេងអាន៖**",
             reply_markup=buttons,
             parse_mode=ParseMode.DEFAULT
         )
 
     except Exception as e:
-        err_detail = traceback.format_exc()
-        print(f"Error: {err_detail}")
+        err_msg = traceback.format_exc()
+        print(f"Error handling video: {err_msg}")
         await status_msg.edit_text(f"❌ កំហុសបច្ចេកទេស:\n`{str(e)[:150]}`")
         if os.path.exists(input_video):
             os.remove(input_video)
@@ -181,7 +180,7 @@ async def on_voice_select(client, callback: CallbackQuery):
     await callback.answer()
     voice_code = VOICE_OPTIONS.get(callback.data)
 
-    await callback.edit_message_text("⚡ [3/4] កំពុងបង្កើតសំឡេងខ្មែរ និងផ្គុំចូលវីដេអូ...")
+    await callback.edit_message_text("⚡ [3/4] កំពុងបង្កើតសំឡេងខ្មែរ និង Render វីដេអូ...")
 
     input_video = session["video_path"]
     khmer_text = session["khmer_text"]
@@ -203,8 +202,7 @@ async def on_voice_select(client, callback: CallbackQuery):
         await callback.message.delete()
 
     except Exception as e:
-        err_detail = traceback.format_exc()
-        print(f"Error render: {err_detail}")
+        print(f"Error rendering: {e}")
         await callback.edit_message_text(f"❌ បរាជ័យក្នុងការ Render:\n`{str(e)[:150]}`")
     finally:
         for f in [input_video, audio_khmer, output_video]:
@@ -213,5 +211,5 @@ async def on_voice_select(client, callback: CallbackQuery):
         user_sessions.pop(user_id, None)
 
 if __name__ == "__main__":
-    print("🚀 Bot ដំណើរការ...")
+    print("🚀 Bot កំពុងដំណើរការ...")
     app.run()
