@@ -6,11 +6,11 @@ import subprocess
 import logging
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-# បន្ថែម static_ffmpeg ដើម្បីកុំឱ្យខ្វះ ffmpeg លើ Render
+# បន្ថែម static_ffmpeg សម្រាប់ Render
 import static_ffmpeg
 static_ffmpeg.add_paths()
 
-# ----------------- Render Web Server (Port Binding) -----------------
+# ----------------- Web Server សម្រាប់ Port Binding លើ Render -----------------
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -24,7 +24,7 @@ def run_web():
 
 threading.Thread(target=run_web, daemon=True).start()
 
-# ----------------- Windows event loop fix -----------------
+# ----------------- Windows Event Loop Fix -----------------
 if sys.platform == 'win32':
     try:
         asyncio.get_event_loop()
@@ -35,13 +35,14 @@ from pyrogram import Client, filters
 from pyrogram.enums import ParseMode
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from google import genai
+from google.genai import types
 import edge_tts
 
 # ----------------- Configuration -----------------
 API_ID = 24900598
 API_HASH = "9dc6d9d36a16cccbdadd9aaa2cd3533a"
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AQ.Ab8RN6LYTYANfXCmCKgalrzu-oGBq7quacDjkAsBsD6AepERMw")
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "8749297297:AAEvWT7qku12vRkcsbkX9oE117cCWWpPrCY")
+GEMINI_API_KEY = "AQ.Ab8RN6JAVpJNZLxtc2hUQFklOrlOjqGoEY94UNmKj3eA5ryz5Q"
+BOT_TOKEN = "8749297297:AAEvWT7qku12vRkcsbkX9oE117cCWWpPrCY"
 
 client_gemini = genai.Client(api_key=GEMINI_API_KEY)
 
@@ -56,6 +57,7 @@ app = Client("free_fast_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TO
 
 # ----------------- Fast Functions -----------------
 def extract_fast_audio(video_path, audio_path):
+    """ទាញយកសំឡេងជា MP3 កម្រិតស្រាល"""
     subprocess.run([
         "ffmpeg", "-y", "-i", video_path,
         "-vn", "-acodec", "libmp3lame", "-b:a", "32k", "-ar", "16000", "-ac", "1",
@@ -63,9 +65,10 @@ def extract_fast_audio(video_path, audio_path):
     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
 
 def translate_fast_with_gemini(audio_path):
+    """បកប្រែសំឡេងជាភាសាខ្មែរតាមរយៈ Gemini"""
     try:
         audio_file = client_gemini.files.upload(file=audio_path)
-        prompt = "Translate all speech in this audio to spoken Khmer directly. Output only the Khmer translation text without notes."
+        prompt = "Translate all speech in this audio to spoken Khmer directly. Output only the Khmer translation text without any other explanations or notes."
         
         response = client_gemini.models.generate_content(
             model="gemini-2.5-flash",
@@ -79,14 +82,16 @@ def translate_fast_with_gemini(audio_path):
             
         return response.text.strip() if response.text else ""
     except Exception as e:
-        print(f"Error AI: {e}")
+        print(f"Error AI Translation: {e}")
         return ""
 
 async def generate_khmer_voice(text, voice_code, output_audio):
+    """បង្កើតសំឡេងនិយាយភាសាខ្មែរ"""
     communicate = edge_tts.Communicate(text, voice_code)
     await communicate.save(output_audio)
 
 def merge_video_fast(video_path, khmer_audio_path, output_video):
+    """បញ្ចូលសំឡេងខ្មែរថ្មីចូលទៅក្នុងវីដេអូ"""
     subprocess.run([
         "ffmpeg", "-y",
         "-i", video_path,
@@ -99,7 +104,7 @@ def merge_video_fast(video_path, khmer_audio_path, output_video):
         output_video
     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
 
-# ----------------- Handlers -----------------
+# ----------------- Bot Handlers -----------------
 @app.on_message(filters.command("start"))
 async def start_cmd(client, message):
     await message.reply_text("👋 សួស្តី! ខ្ញុំជា Bot បកប្រែវីដេអូជាភាសាខ្មែរ។ សូមផ្ញើវីដេអូមក!")
@@ -121,7 +126,8 @@ async def handle_video(client, message):
 
         if not khmer_text:
             await status_msg.edit_text("⚠️ មិនអាចស្ដាប់ឮ ឬបកប្រែសំឡេងក្នុងវីដេអូនេះទេ។")
-            if os.path.exists(input_video): os.remove(input_video)
+            if os.path.exists(input_video): 
+                os.remove(input_video)
             return
 
         user_sessions[user_id] = {
