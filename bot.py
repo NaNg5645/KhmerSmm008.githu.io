@@ -6,6 +6,10 @@ import subprocess
 import logging
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
+# បន្ថែម static_ffmpeg ដើម្បីកុំឱ្យខ្វះ ffmpeg លើ Render
+import static_ffmpeg
+static_ffmpeg.add_paths()
+
 # ----------------- Render Web Server (Port Binding) -----------------
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -18,7 +22,6 @@ def run_web():
     server = HTTPServer(("0.0.0.0", port), SimpleHandler)
     server.serve_forever()
 
-# បើកដំណើរការ Web Server ក្នុង background កុំឱ្យ Render បិទ
 threading.Thread(target=run_web, daemon=True).start()
 
 # ----------------- Windows event loop fix -----------------
@@ -53,7 +56,6 @@ app = Client("free_fast_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TO
 
 # ----------------- Fast Functions -----------------
 def extract_fast_audio(video_path, audio_path):
-    """ទាញយកសំឡេងកម្រិតស្រាលបំផុតត្រឹម 32k ដើម្បីឱ្យ Upload ទៅ AI ភ្លាមៗ"""
     subprocess.run([
         "ffmpeg", "-y", "-i", video_path,
         "-vn", "-acodec", "libmp3lame", "-b:a", "32k", "-ar", "16000", "-ac", "1",
@@ -61,7 +63,6 @@ def extract_fast_audio(video_path, audio_path):
     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
 
 def translate_fast_with_gemini(audio_path):
-    """បកប្រែដោយប្រើ Prompt ខ្លី"""
     try:
         audio_file = client_gemini.files.upload(file=audio_path)
         prompt = "Translate all speech in this audio to spoken Khmer directly. Output only the Khmer translation text without notes."
@@ -82,12 +83,10 @@ def translate_fast_with_gemini(audio_path):
         return ""
 
 async def generate_khmer_voice(text, voice_code, output_audio):
-    """បង្កើតសំឡេងនិយាយខ្មែរ Free"""
     communicate = edge_tts.Communicate(text, voice_code)
     await communicate.save(output_audio)
 
 def merge_video_fast(video_path, khmer_audio_path, output_video):
-    """ផ្គុំវីដេអូល្បឿនលឿនបំផុត"""
     subprocess.run([
         "ffmpeg", "-y",
         "-i", video_path,
@@ -103,7 +102,7 @@ def merge_video_fast(video_path, khmer_audio_path, output_video):
 # ----------------- Handlers -----------------
 @app.on_message(filters.command("start"))
 async def start_cmd(client, message):
-    await message.reply_text("👋 សួស្តី! ខ្ញុំជា Bot បកប្រែវីដេអូជាភាសាខ្មែរ (ល្បឿនលឿន)។ សូមផ្ញើវីដេអូមក!")
+    await message.reply_text("👋 សួស្តី! ខ្ញុំជា Bot បកប្រែវីដេអូជាភាសាខ្មែរ។ សូមផ្ញើវីដេអូមក!")
 
 @app.on_message(filters.video | filters.document)
 async def handle_video(client, message):
