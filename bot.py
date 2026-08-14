@@ -16,7 +16,7 @@ class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(b"Bot is active!")
+        self.wfile.write(b"Bot is active 24/7!")
 
 def run_web():
     port = int(os.environ.get("PORT", 8080))
@@ -55,32 +55,42 @@ user_sessions = {}
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 app = Client("free_fast_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# ----------------- Helper Functions -----------------
+# ----------------- Fast Functions -----------------
 def extract_fast_audio(video_path, audio_path):
-    subprocess.run([
+    """ដកស្រង់សំឡេងចេញពីវីដេអូ ប្រសិនបើវីដេអូគ្មានសំឡេង វានឹង return False"""
+    result = subprocess.run([
         "ffmpeg", "-y", "-i", video_path,
         "-vn", "-acodec", "libmp3lame", "-b:a", "32k", "-ar", "16000", "-ac", "1",
         audio_path
-    ], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, check=True)
+    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    
+    # ពិនិត្យមើលថាតើ File សំឡេងទាញចេញបានជោគជ័យ និងមានទំហំធំជាង 0 byte ឬអត់
+    if result.returncode == 0 and os.path.exists(audio_path) and os.path.getsize(audio_path) > 0:
+        return True
+    return False
 
 def translate_fast_with_gemini(audio_path):
-    audio_file = client_gemini.files.upload(file=audio_path)
-    prompt = "Listen to this audio carefully. Translate and transcribe any spoken words directly into spoken Khmer language. If there is no speech, reply with NO_SPEECH. Output ONLY the Khmer text."
-    
-    response = client_gemini.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=[audio_file, prompt]
-    )
-    
     try:
-        client_gemini.files.delete(name=audio_file.name)
-    except Exception:
-        pass
+        audio_file = client_gemini.files.upload(file=audio_path)
+        prompt = "Listen to this audio. Translate and transcribe all spoken words directly into spoken Khmer language. If there is no speech, reply with NO_SPEECH. Output ONLY the Khmer text."
         
-    res_text = response.text.strip() if response.text else ""
-    if "NO_SPEECH" in res_text:
+        response = client_gemini.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[audio_file, prompt]
+        )
+        
+        try:
+            client_gemini.files.delete(name=audio_file.name)
+        except Exception:
+            pass
+            
+        res_text = response.text.strip() if response.text else ""
+        if "NO_SPEECH" in res_text:
+            return ""
+        return res_text
+    except Exception as e:
+        print(f"Error AI Translation: {e}")
         return ""
-    return res_text
 
 async def generate_khmer_voice(text, voice_code, output_audio):
     communicate = edge_tts.Communicate(text, voice_code)
@@ -97,7 +107,7 @@ def merge_video_fast(video_path, khmer_audio_path, output_video):
         "-c:a", "aac",
         "-shortest",
         output_video
-    ], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, check=True)
+    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
 
 # ----------------- Bot Handlers -----------------
 @app.on_message(filters.command("start"))
@@ -115,12 +125,18 @@ async def handle_video(client, message):
     try:
         await message.download(file_name=input_video)
         
-        await status_msg.edit_text("⚡ [2/4] កំពុងបំប្លែងសំឡេង និងផ្ញើទៅកាន់ AI បកប្រែ...")
-        extract_fast_audio(input_video, audio_orig)
+        await status_msg.edit_text("⚡ [2/4] កំពុងស្ដាប់ និងផ្ញើទៅកាន់ AI បកប្រែ...")
+        has_audio = extract_fast_audio(input_video, audio_orig)
+
+        if not has_audio:
+            await status_msg.edit_text("⚠️ **វីដេអូនេះគ្មានសំឡេង (Mute/No Audio) ទេ!**\nសូមផ្ញើវីដេអូដែលមានសំឡេងមនុស្សនិយាយ។")
+            if os.path.exists(input_video): os.remove(input_video)
+            return
+
         khmer_text = translate_fast_with_gemini(audio_orig)
 
         if not khmer_text:
-            await status_msg.edit_text("⚠️ វីដេអូនេះមិនមានសំឡេងមនុស្សនិយាយ ឬ AI មិនអាចស្ដាប់ឮឡើយ។")
+            await status_msg.edit_text("⚠️ មិនឮសំឡេងមនុស្សនិយាយ ឬ AI មិនអាចស្ដាប់បានក្នុងវីដេអូនេះទេ។")
             if os.path.exists(input_video): os.remove(input_video)
             return
 
