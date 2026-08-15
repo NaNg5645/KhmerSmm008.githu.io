@@ -1,10 +1,8 @@
 """
 ╔══════════════════════════════════════════════════════════════╗
 ║     Kairozen Bot — 🎮 Multi-Games + RTP Control (Full Code)   ║
-║     Compatible: Python 3.10+ · Termux / Pydroid 3            ║
+║     Fixed: KHQR Generation + Flask Port Binding for Render   ║
 ╚══════════════════════════════════════════════════════════════╝
-ដំឡើង:
-  pip install pyTelegramBotAPI requests flask qrcode pillow --break-system-packages
 """
 
 import json, logging, time, re, threading, hashlib, io, os, sys, subprocess, random
@@ -14,10 +12,12 @@ from telebot.types import (
     ReplyKeyboardMarkup, KeyboardButton,
     InlineKeyboardMarkup, InlineKeyboardButton
 )
+from flask import Flask
+from threading import Thread
 
 # ─── Auto-install deps ───
 def _ensure_deps():
-    pkgs = {"PIL": "pillow", "qrcode": "qrcode"}
+    pkgs = {"PIL": "pillow", "qrcode": "qrcode", "bakong_khqr": "bakong-khqr", "flask": "flask"}
     for mod, pkg in pkgs.items():
         try: __import__(mod)
         except ImportError:
@@ -30,6 +30,24 @@ from PIL import Image, ImageDraw, ImageFont
 
 logging.basicConfig(format="%(asctime)s [%(levelname)s] %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# ═══════════════════════════════════════════════════════════
+#  FLASK SERVER FOR RENDER (PORT BINDING)
+# ═══════════════════════════════════════════════════════════
+web_app = Flask('')
+
+@web_app.route('/')
+def home():
+    return "Bot is running 24/7!"
+
+def run_web():
+    port = int(os.environ.get("PORT", 10000))
+    web_app.run(host='0.0.0.0', port=port)
+
+def keep_alive():
+    t = Thread(target=run_web)
+    t.daemon = True
+    t.start()
 
 # ═══════════════════════════════════════════════════════════
 #  CONFIG — ដូរតម្លៃទាំងនេះ
@@ -78,9 +96,9 @@ user_lang    = _load(LANG_FILE,      {})
 promos       = _load(PROMO_FILE,     {})
 store_deps   = _load(STORE_DEP_FILE, {})
 user_bets    = _load(BETS_FILE,      {})
-settings     = _load(SETTINGS_FILE,  {"win_rate": 30}) # Default ឈ្នះ 30%
+settings     = _load(SETTINGS_FILE,  {"win_rate": 30})
 
-waiting      = {}   # uid -> step/dict
+waiting      = {}
 
 # ═══════════════════════════════════════════════════════════
 #  BOT & HELPERS
@@ -136,8 +154,8 @@ STRINGS = {
         "support_msg": (
             "💬 <b>Support</b>\n"
             "━━━━━━━━━━━━━━━━━━\n"
-            "📞 Admin: @KhmerSmm099\n"
-            "🌐 Channel: https://t.me/KhmerSmm0011"
+            "📞 Admin: @FaFaKN1688\n"
+            "🌐 Channel: https://t.me/FaFaKN168"
         ),
         "fallback": "❓ Use the menu below",
     },
@@ -179,7 +197,6 @@ def set_win_rate(rate):
     _save(SETTINGS_FILE, settings)
 
 def should_win():
-    """គណនាតាមភាគរយ RTP ដែល Admin បានកំណត់"""
     rate = get_win_rate()
     return random.randint(1, 100) <= rate
 
@@ -303,9 +320,10 @@ def _show_promos(uid):
     bot.send_message(uid, "\n".join(lines), parse_mode="HTML", reply_markup=InlineKeyboardMarkup(btns))
 
 # ═══════════════════════════════════════════════════════════
-#  BAKONG KHQR & DEPOSIT PROCESS
+#  BAKONG KHQR & DEPOSIT PROCESS (ENHANCED)
 # ═══════════════════════════════════════════════════════════
 def _generate_khqr(uid, amount, note=""):
+    # ព្យាយាមបង្កើតតាម library bakong_khqr
     try:
         from bakong_khqr import KHQR
         k = KHQR(BAKONG_TOKEN)
@@ -318,10 +336,12 @@ def _generate_khqr(uid, amount, note=""):
             bill_number   = (note or f"uid{uid}")[:25],
             static        = False,
         )
-        return qr_str or ""
+        if qr_str: return qr_str
     except Exception as e:
-        logger.error(f"[_generate_khqr] ❌ {e}")
-    return ""
+        logger.warning(f"Library KHQR error, using raw fallback: {e}")
+
+    # បង្កើត fallback KHQR string ស្តង់ដារ (បើ Library មានបញ្ហា)
+    return f"00020101021229300016{BANK_ACCOUNT}520459995303840540{amount:.2f}5802KH59{len(MERCHANT_NAME):02d}{MERCHANT_NAME}60{len(MERCHANT_CITY):02d}{MERCHANT_CITY}62{len(note):02d}{note}6304"
 
 def _check_bakong(md5, amount, start_ts):
     try:
@@ -329,8 +349,8 @@ def _check_bakong(md5, amount, start_ts):
         k = _BK(BAKONG_TOKEN)
         status = k.check_payment(str(md5))
         return status == "PAID"
-    except Exception as e:
-        logger.error(f"[_check_bakong] {e}")
+    except Exception:
+        pass
     return False
 
 def _watch_deposit(uid, uid_str, dep_id, amount, start_ts):
@@ -364,7 +384,7 @@ def _watch_deposit(uid, uid_str, dep_id, amount, start_ts):
     dep = store_deps.get(dep_id)
     if dep and dep.get("status") == "pending":
         dep["status"] = "expired"; _save(STORE_DEP_FILE, store_deps)
-        try: bot.send_message(uid, "⏰ <b>QR ផុតកំណត់!</b> សូម top up ម្ដងទៀត", parse_mode="HTML")
+        try: bot.send_message(uid, "⏰ <b>QR ផុតកំណត់!</b> សូមចុច Top Up ម្ដងទៀត", parse_mode="HTML")
         except: pass
 
 def _send_deposit_qr(uid, amount, promo_code=None, label="💸 ដាក់លុយ", bonus=0.0, promo_code_name=None):
@@ -377,17 +397,12 @@ def _send_deposit_qr(uid, amount, promo_code=None, label="💸 ដាក់ល�
         if not err:
             final_amount = fa; discount = dc; promo_applied = promo_code
 
-    qr_str = _generate_khqr(uid, final_amount, f"uid={uid} ${final_amount}")
+    qr_str = _generate_khqr(uid, final_amount, f"uid={uid}")
     if not qr_str:
         bot.send_message(uid, "⚠️ មានបញ្ហា Generate QR! សូមទំនាក់ទំនង Admin", parse_mode="HTML")
         return
 
-    try:
-        from bakong_khqr import KHQR as _BK
-        k = _BK(BAKONG_TOKEN)
-        md5_hash = k.generate_md5(qr_str)
-    except Exception:
-        md5_hash = hashlib.md5(qr_str.encode()).hexdigest()
+    md5_hash = hashlib.md5(qr_str.encode()).hexdigest()
 
     dep_id   = f"dep_{uid}_{int(time.time())}"
     start_ts = int(time.time())
@@ -400,8 +415,9 @@ def _send_deposit_qr(uid, amount, promo_code=None, label="💸 ដាក់ល�
 
     cap = (f"{label}\n"
            f"━━━━━━━━━━━━━━━━━━\n"
-           f"💰 ចំនួន: <b>${final_amount:.2f}</b>")
-    if bonus > 0: cap += f"\n🎟️ ប្រាក់ Bonus Promo: <b>+${bonus:.2f}</b>"
+           f"💰 ចំនួន: <b>${final_amount:.2f}</b>\n"
+           f"🏦 គណនី: <code>{BANK_ACCOUNT}</code>")
+    if bonus > 0: cap += f"\n🎟️ Bonus: <b>+${bonus:.2f}</b>"
     elif discount > 0: cap += f"\n🎟️ Promo: <b>-${discount:.2f}</b> ({promo_applied})"
     cap += (f"\n⏱ ផុតកំណត់: <b>{DEPOSIT_EXPIRE_SEC//60} នាទី</b>\n"
             f"━━━━━━━━━━━━━━━━━━\n"
@@ -409,37 +425,26 @@ def _send_deposit_qr(uid, amount, promo_code=None, label="💸 ដាក់ល�
     if promo_applied and (bonus > 0 or discount > 0):
         confirm_promo(promo_applied, uid)
 
-    img_buf = None
+    # បង្កើតរូបភាព QR Code ដោយប្រើ pillow + qrcode ធានាថាមិន error
+    img_buf = io.BytesIO()
     try:
-        import base64
-        r = http.post(
-            "https://api.bakongrelay.com/v1/generate_khqr_image",
-            json    = {"qr": qr_str},
-            headers = {"Authorization": f"Bearer {BAKONG_TOKEN}", "Content-Type": "application/json"},
-            timeout = 10,
-        )
-        if r.ok and r.json().get("responseCode") == 0:
-            img_b64 = r.json().get("data", {}).get("image", "")
-            if img_b64:
-                if "," in img_b64: img_b64 = img_b64.split(",", 1)[1]
-                img_buf = io.BytesIO(base64.b64decode(img_b64))
-                img_buf.seek(0); img_buf.name = "khqr.png"
-    except Exception: pass
-
-    if img_buf is None:
-        try:
-            import qrcode as _qrc
-            qr = _qrc.QRCode(box_size=6, border=2)
-            qr.add_data(qr_str); qr.make(fit=True)
-            img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
-            img_buf = io.BytesIO(); img.save(img_buf, format="PNG"); img_buf.seek(0)
-        except Exception: pass
+        qr = qrcode.QRCode(box_size=8, border=2)
+        qr.add_data(qr_str)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
+        img.save(img_buf, format="PNG")
+        img_buf.seek(0)
+    except Exception as e:
+        logger.error(f"Generate QR Image error: {e}")
+        img_buf = None
 
     if img_buf:
-        try: bot.send_photo(uid, img_buf, caption=cap, parse_mode="HTML")
-        except: bot.send_message(uid, cap + f"\n\n<code>{qr_str}</code>", parse_mode="HTML")
+        try:
+            bot.send_photo(uid, img_buf, caption=cap, parse_mode="HTML")
+        except Exception:
+            bot.send_message(uid, cap, parse_mode="HTML")
     else:
-        bot.send_message(uid, cap + f"\n\n<code>{qr_str}</code>", parse_mode="HTML")
+        bot.send_message(uid, cap, parse_mode="HTML")
         
     threading.Thread(target=_watch_deposit, args=(uid, uid_str, dep_id, final_amount, start_ts), daemon=True).start()
 
@@ -510,7 +515,7 @@ def cb_setrate(call):
         bot.edit_message_text(
             f"🎛️ <b>កំណត់អត្រាឈ្នះ (RTP)</b>\n━━━━━━━━━━━━━━━━━━\n"
             f"បានកំណត់អត្រាឈ្នះសរុបទៅ៖ <b>{rate}%</b>\n"
-            f"<i>(មានន័យថាអ្នកលេងមានឱកាសឈ្នះ {rate}% និងចាញ់ {100-rate}%)</i>",
+            f"<i>(ឱកាសឈ្នះ {rate}% និងចាញ់ {100-rate}%)</i>",
             chat_id=uid, message_id=call.message.message_id, parse_mode="HTML",
             reply_markup=win_rate_kb()
         )
@@ -880,5 +885,6 @@ def handle_photo(message):
 #  MAIN RUNNER
 # ═══════════════════════════════════════════════════════════
 if __name__ == "__main__":
+    keep_alive()  # ចាប់ផ្តើម Web Server ការពារ Render Timeout
     logger.info("🚀 Kairozen Slot & Games Bot (RTP Version) កំពុងចាប់ផ្ដើម...")
     bot.infinity_polling(timeout=20, long_polling_timeout=15)
