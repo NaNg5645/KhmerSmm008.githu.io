@@ -52,15 +52,7 @@ def keep_alive():
 # ═══════════════════════════════════════════════════════════
 #  CONFIG — ព័ត៌មានគណនី
 # ═══════════════════════════════════════════════════════════
-BOT_TOKEN          = "8969920540:AAEecg98cS2OZgTFw3CMwtOoKweT8CRlp_Y"
-ADMIN_ID           = 8807182741
-
-# Bakong KHQR
-BAKONG_TOKEN       = "8969920540:AAEecg98cS2OZgTFw3CMwtOoKweT8CRlp_Y"
-BANK_ACCOUNT       = "samnang_mon@bkrt"
-MERCHANT_NAME      = "FaFa168"
-MERCHANT_CITY      = "Phnom Penh"
-
+BOT_TOKEN          
 DEPOSIT_EXPIRE_SEC = 180   # 3 minutes
 POLL_INTERVAL      = 5
 
