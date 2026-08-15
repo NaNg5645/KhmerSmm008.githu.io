@@ -1,7 +1,7 @@
 """
 ╔══════════════════════════════════════════════════════════════╗
 ║     Kairozen Bot — 🎮 Multi-Games + RTP Control (Full Code)   ║
-║     Fixed: KHQR Generation + Flask Port Binding for Render   ║
+║     Full Fixed: Built-in KHQR Generator + Flask Web Server    ║
 ╚══════════════════════════════════════════════════════════════╝
 """
 
@@ -17,7 +17,7 @@ from threading import Thread
 
 # ─── Auto-install deps ───
 def _ensure_deps():
-    pkgs = {"PIL": "pillow", "qrcode": "qrcode", "bakong_khqr": "bakong-khqr", "flask": "flask"}
+    pkgs = {"PIL": "pillow", "qrcode": "qrcode", "flask": "flask"}
     for mod, pkg in pkgs.items():
         try: __import__(mod)
         except ImportError:
@@ -50,7 +50,7 @@ def keep_alive():
     t.start()
 
 # ═══════════════════════════════════════════════════════════
-#  CONFIG — ដូរតម្លៃទាំងនេះ
+#  CONFIG — ព័ត៌មានគណនី
 # ═══════════════════════════════════════════════════════════
 BOT_TOKEN          = "8969920540:AAEecg98cS2OZgTFw3CMwtOoKweT8CRlp_Y"
 ADMIN_ID           = 8807182741
@@ -320,37 +320,49 @@ def _show_promos(uid):
     bot.send_message(uid, "\n".join(lines), parse_mode="HTML", reply_markup=InlineKeyboardMarkup(btns))
 
 # ═══════════════════════════════════════════════════════════
-#  BAKONG KHQR & DEPOSIT PROCESS (ENHANCED)
+#  PURE PYTHON KHQR GENERATOR & DEPOSIT PROCESS
 # ═══════════════════════════════════════════════════════════
-def _generate_khqr(uid, amount, note=""):
-    # ព្យាយាមបង្កើតតាម library bakong_khqr
-    try:
-        from bakong_khqr import KHQR
-        k = KHQR(BAKONG_TOKEN)
-        qr_str = k.create_qr(
-            bank_account  = BANK_ACCOUNT,
-            merchant_name = MERCHANT_NAME,
-            merchant_city = MERCHANT_CITY,
-            amount        = round(float(amount), 2),
-            currency      = "USD",
-            bill_number   = (note or f"uid{uid}")[:25],
-            static        = False,
-        )
-        if qr_str: return qr_str
-    except Exception as e:
-        logger.warning(f"Library KHQR error, using raw fallback: {e}")
+def _crc16_ccitt(data: str) -> str:
+    crc = 0xFFFF
+    for ch in data:
+        crc = (crc ^ (ord(ch) << 8)) & 0xFFFF
+        for _ in range(8):
+            if crc & 0x8000:
+                crc = ((crc << 1) ^ 0x1021) & 0xFFFF
+            else:
+                crc = (crc << 1) & 0xFFFF
+    return f"{crc:04X}"
 
-    # បង្កើត fallback KHQR string ស្តង់ដារ (បើ Library មានបញ្ហា)
-    return f"00020101021229300016{BANK_ACCOUNT}520459995303840540{amount:.2f}5802KH59{len(MERCHANT_NAME):02d}{MERCHANT_NAME}60{len(MERCHANT_CITY):02d}{MERCHANT_CITY}62{len(note):02d}{note}6304"
+def _generate_khqr(uid, amount, note=""):
+    try:
+        amt_str = f"{float(amount):.2f}"
+        tag_00 = "000201"
+        tag_01 = "010212"
+        
+        # Tag 29 - Merchant Account Info
+        sub_tag_00 = f"0016{BANK_ACCOUNT}"
+        tag_29 = f"29{len(sub_tag_00):02d}{sub_tag_00}"
+        
+        tag_52 = "52045999"
+        tag_53 = "5303840"  # USD
+        tag_54 = f"54{len(amt_str):02d}{amt_str}"
+        tag_58 = "5802KH"
+        tag_59 = f"59{len(MERCHANT_NAME):02d}{MERCHANT_NAME}"
+        tag_60 = f"60{len(MERCHANT_CITY):02d}{MERCHANT_CITY}"
+        
+        bill = f"uid{uid}"[:25]
+        sub_tag_01 = f"01{len(bill):02d}{bill}"
+        tag_62 = f"62{len(sub_tag_01):02d}{sub_tag_01}"
+        
+        raw_data = tag_00 + tag_01 + tag_29 + tag_52 + tag_53 + tag_54 + tag_58 + tag_59 + tag_60 + tag_62 + "6304"
+        crc = _crc16_ccitt(raw_data)
+        return raw_data + crc
+    except Exception as e:
+        logger.error(f"Generate KHQR String error: {e}")
+        return ""
 
 def _check_bakong(md5, amount, start_ts):
-    try:
-        from bakong_khqr import KHQR as _BK
-        k = _BK(BAKONG_TOKEN)
-        status = k.check_payment(str(md5))
-        return status == "PAID"
-    except Exception:
-        pass
+    # កន្លែងពិនិត្យវិក្កយបត្រ (បើគ្មាន Bakong API Key វានឹងរង់ចាំ Admin អនុម័ត)
     return False
 
 def _watch_deposit(uid, uid_str, dep_id, amount, start_ts):
@@ -421,11 +433,12 @@ def _send_deposit_qr(uid, amount, promo_code=None, label="💸 ដាក់ល�
     elif discount > 0: cap += f"\n🎟️ Promo: <b>-${discount:.2f}</b> ({promo_applied})"
     cap += (f"\n⏱ ផុតកំណត់: <b>{DEPOSIT_EXPIRE_SEC//60} នាទី</b>\n"
             f"━━━━━━━━━━━━━━━━━━\n"
-            f"📱 Scan ជាមួយ Bakong / ABA / Wing")
+            f"📱 Scan ជាមួយ Bakong / ABA / Wing\n"
+            f"📌 <i>ផ្ទេររួចផ្ញើ Slip មកទីនេះដើម្បីបញ្ចូលលុយ</i>")
     if promo_applied and (bonus > 0 or discount > 0):
         confirm_promo(promo_applied, uid)
 
-    # បង្កើតរូបភាព QR Code ដោយប្រើ pillow + qrcode ធានាថាមិន error
+    # បង្កើតរូបភាព QR Code
     img_buf = io.BytesIO()
     try:
         qr = qrcode.QRCode(box_size=8, border=2)
@@ -850,7 +863,7 @@ def handle(message):
     bot.send_message(uid, t(uid, "fallback"), reply_markup=main_kb(uid))
 
 # ═══════════════════════════════════════════════════════════
-#  BROADCAST & PHOTO HANDLERS
+#  BROADCAST & PHOTO / SLIP HANDLERS
 # ═══════════════════════════════════════════════════════════
 def _do_broadcast(admin_uid, message):
     waiting.pop(admin_uid, None)
@@ -880,6 +893,17 @@ def handle_photo(message):
         except: pass
         bot.send_message(uid, "✅ បានផ្ញើសំណើដកប្រាក់ទៅ Admin ហើយ។", reply_markup=main_kb(uid))
         waiting.pop(uid, None)
+    else:
+        # ប្រសិនបើភ្ញៀវផ្ញើ Slip ដាក់ប្រាក់
+        u_info = users_db.get(str(uid), {})
+        caption = f"🧾 <b>Deposit Slip</b>\n👤 <code>{uid}</code> {u_info.get('name','')} @{u_info.get('username','')}"
+        btns = [
+            [InlineKeyboardButton("➕ បន្ថែម Balance ឱ្យភ្ញៀវ", callback_data=f"useraction:addbal:{uid}")]
+        ]
+        try:
+            bot.send_photo(ADMIN_ID, message.photo[-1].file_id, caption=caption, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(btns))
+            bot.send_message(uid, "✅ បានទទួលវិក្កយបត្រ (Slip)! Admin នឹងត្រួតពិនិត្យ និងបញ្ចូលទឹកប្រាក់ជូនភ្លាមៗ។")
+        except: pass
 
 # ═══════════════════════════════════════════════════════════
 #  MAIN RUNNER
